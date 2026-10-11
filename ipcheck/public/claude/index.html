@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude AI IP 检测 - IP 纯净度 - NetProbe</title>
+<meta name="description" content="检测当前 Claude AI 出口 IP 纯净度、风险、属性（住宅/机房）、支持地区、DNS、UDP 与可用性。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <h1 style="margin-bottom:0">Claude AI IP 风险检测</h1>
+    <label class="toggle" title="开启后隐藏 IP 中段">
+      <span class="toggle-label">隐藏IP</span>
+      <input type="checkbox" id="ipMaskToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="desc">检测当前 Claude AI 出口 IP 纯净度、风险、属性（住宅/机房/原生）、DNS、UDP 与可用性。结果仅供参考，账号风控由官方决定。</p>
+
+  <div class="exit-grid" id="exitGrid">
+    <div class="exit-card"><div class="exit-label">中国出口IPV4</div><div class="exit-ip ip-text" id="exit-cn">检测中…</div><div class="exit-geo" id="exit-cn-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">☁ CLOUDFLARE 出口IP</div><div class="exit-ip ip-text" id="exit-cf">检测中…</div><div class="exit-geo" id="exit-cf-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">✳ CLAUDE AI出口IP</div><div class="exit-ip ip-text" id="exit-cl">检测中…</div><div class="exit-geo" id="exit-cl-geo"></div></div>
+  </div>
+
+  <div class="duo-grid">
+    <div class="card">
+      <p class="card-title">CLAUDE AI信任评分(TRUST SCORE)</p>
+      <div id="scoreBody"><div class="muted small"><span class="spin"></span> 评估中…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title">CLAUDE AI出口IP 属性</p>
+      <div class="kv-rows" id="attrRows"><div class="muted small">等待出口检测…</div></div>
+    </div>
+  </div>
+
+  <div class="duo-grid" style="margin-top:14px">
+    <div class="card">
+      <p class="card-title">CLAUDE AI出口IP安全检测</p>
+      <div class="kv-rows" id="secRows"><div class="muted small">等待出口检测…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title" style="gap:4px">CLAUDE 可用性检测 <span class="muted small" title="对官方端点发起真实请求测得">ⓘ</span>
+        <button class="btn btn-ghost small" id="refreshAvail" style="margin-left:auto">刷新</button></p>
+      <div class="kv-rows" id="availRows"><div class="muted small">检测中…</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CLAUDE 服务状态<span id="svcStatus" style="margin-left:auto"><span class="muted small">查询中…</span></span></p>
+  </div>
+
+  <div class="duo-grid" style="margin-top:14px">
+    <div class="card">
+      <p class="card-title">DNS 泄露检测 <button class="btn btn-ghost small" id="goDns" style="margin-left:auto">查看DNS安全</button></p>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">状态</span><span class="v" id="dnsStatus"><span class="spin"></span></span></div>
+        <div class="kv-row"><span class="k">DNS 出口</span><span class="v ip-cell" id="dnsExit">—</span></div>
+        <div class="kv-row"><span class="k">服务商</span><span class="v" id="dnsIsp">—</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">WEBRTC UDP 泄露检测 <button class="btn btn-ghost small" id="goUdp" style="margin-left:auto">深度查询</button></p>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">状态</span><span class="v" id="udpStatus"><span class="spin"></span></span></div>
+        <div class="kv-row"><span class="k">UDP 出口</span><span class="v ip-cell" id="udpExit">—</span></div>
+        <div class="kv-row"><span class="k">归属地</span><span class="v" id="udpGeo">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CLAUDE AI出口IP用户设备信息 <span class="muted small" style="margin-left:auto">指纹仅在本地计算，不上传</span></p>
+    <div class="kv-rows" id="deviceRows"><div class="muted small">等待出口检测…</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CLAUDE 中国用户特征检测 <span class="badge">0-100 加权评分</span>
+      <button class="btn btn-ghost small" id="cnRecalc" style="margin-left:auto">重新检测</button></p>
+    <p class="muted small" style="margin-top:-6px">六项区域指纹加权打分：时区 30 / 语言 24 / 中文字体 20 / 区域格式 10 / UTC+8 偏移 8 / Emoji 渲染 8。得分越高，环境越容易被识别为中国用户。全部本地计算，不上传。</p>
+    <div id="cnScoreBody" style="margin-top:8px"><div class="muted small"><span class="spin"></span> 检测中…</div></div>
+    <div class="kv-rows" id="cnSignalRows" style="margin-top:6px"></div>
+    <div id="cnVerdict" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CLAUDE AI 出口 IP 历史记录
+      <button class="btn btn-ghost small" id="clearHist" style="margin-left:auto">清除</button></p>
+    <p class="muted small" style="margin-top:-6px" id="histNote">0 记录 · 100% 隐私友好 · 历史数据仅存浏览器本地，方便查阅</p>
+    <div class="kv-rows" id="histRows"><div class="muted small">暂无记录</div></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>Claude 实时服务状态怎么查？</summary><div class="read-body">Anthropic 官方状态页实时汇总 API 与网页的可用性，本站「服务状态」页面会自动聚合显示。如果你在「可用性检测」里看到异常，可先去状态页确认是否为官方故障，再排查本地网络。</div></details>
+    <details class="read-card"><summary>家宽、机房、原生 IP 有什么区别？</summary><div class="read-body">家宽（ISP）IP 由运营商分配给家庭用户，风控信任度最高；机房（Hosting）IP 由数据中心持有，常被批量使用，风控更敏感；"原生"指 IP 归属地与注册地一致。本页的信任评分就是基于这三者计算。</div></details>
+    <details class="read-card"><summary>时区与语言不一致会有影响吗？</summary><div class="read-body">出口 IP 在美国、但浏览器时区是 UTC+8、语言是中文，这种组合是 AI 风控的常见信号之一。它本身不直接封号，但会提高整体风险评分。建议让浏览器环境与出口 IP 尽量一致。</div></details>
+    <details class="read-card"><summary>WebRTC 泄露为什么要查？</summary><div class="read-body">WebRTC 通过 UDP 直接探测公网地址，可能绕过仅代理 HTTP/S 的方案暴露真实 IP。本页的「WEBRTC UDP 泄露检测」是快速版，完整版请到「WebRTC」页面。</div></details>
+    <details class="read-card"><summary>DNS 泄露为什么也要查？</summary><div class="read-body">明文 DNS 查询会把你访问的域名暴露给本地运营商，也能被用于推断真实位置。建议用「DNS泄露」页面的唯一子域名检测验证你的 DNS 是否已加密。</div></details>
+    <details class="read-card"><summary>为什么本次检测 Cloudflare 出口获取失败？</summary><div class="read-body">「CLOUDFLARE 出口IP」取自 1.1.1.1 的 trace 接口。部分代理规则不放行 1.1.1.1，会显示获取失败——这不代表你的网络有问题，CLAUDE 出口才是本页的核心数据。</div></details>
+    <details class="read-card"><summary>被风控后的自查清单</summary><div class="read-body">① 看本页信任评分与安全检测；② 确认出口地区受支持；③ 检查时区/语言是否与出口一致；④ 查 DNS 与 UDP 是否泄露真实位置；⑤ 更换更纯净的出口后再试。</div></details>
+    <details class="read-card"><summary>IPv6 环境访问 AI 服务要注意什么？</summary><div class="read-body">如果你的网络同时有 IPv4 和 IPv6，浏览器可能优先走 IPv6 出口。若代理只接管 IPv4，真实 IPv6 地址就会泄露。可在「WebRTC」页面观察候选地址中是否有你本地 IPv6。</div></details>
+    <details class="read-card"><summary>Claude 客户端会读取我的时区吗？</summary><div class="read-body">据公开的逆向研究，Claude 桌面与终端客户端在连接时会读取操作系统时区等本机信息。网页拿不到客户端能读的全部数据，但关键信号一致——本页读取的正是同一个系统时区，并叠加语言、字体等指纹加权评分。</div></details>
+    <details class="read-card"><summary>怎样降低「中国用户特征」得分？</summary><div class="read-body">最有效的是切断时区锚定：把系统（或浏览器）时区改为同样 UTC+8 但不属于中国大陆的时区，例如 Asia/Singapore，语言列表里的中文条目也会显著拉高得分，可按需精简。系统级改动优先于浏览器插件伪装，因为客户端读的是操作系统值。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · Claude AI IP 检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/purity.js?v=AUTO"></script>
+<script src="/assets/js/claude.js?v=AUTO"></script>
+<script src="/assets/js/claude-cn.js?v=AUTO"></script>
+</body>
+</html>

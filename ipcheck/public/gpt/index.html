@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT · Codex IP 检测 - IP 纯净度 - NetProbe</title>
+<meta name="description" content="检测当前 CHATGPT 出口 IP 纯净度、风险、属性（住宅/机房）、支持地区、DNS、UDP 与可用性。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <h1 style="margin-bottom:0">ChatGPT · Codex IP 风险检测</h1>
+    <label class="toggle" title="开启后隐藏 IP 中段">
+      <span class="toggle-label">隐藏IP</span>
+      <input type="checkbox" id="ipMaskToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="desc">检测当前 CHATGPT 出口 IP 纯净度、风险、属性（住宅/机房/原生）、DNS、UDP 与可用性。结果仅供参考，账号风控由官方决定。</p>
+
+  <div class="exit-grid" id="exitGrid">
+    <div class="exit-card"><div class="exit-label">中国出口IPV4</div><div class="exit-ip ip-text" id="exit-cn">检测中…</div><div class="exit-geo" id="exit-cn-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">☁ CLOUDFLARE 出口IP</div><div class="exit-ip ip-text" id="exit-cf">检测中…</div><div class="exit-geo" id="exit-cf-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">✳ CHATGPT 出口IP</div><div class="exit-ip ip-text" id="exit-cl">检测中…</div><div class="exit-geo" id="exit-cl-geo"></div></div>
+  </div>
+
+  <div class="duo-grid">
+    <div class="card">
+      <p class="card-title">CHATGPT AI信任评分(TRUST SCORE)</p>
+      <div id="scoreBody"><div class="muted small"><span class="spin"></span> 评估中…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title">CHATGPT 出口IP 属性</p>
+      <div class="kv-rows" id="attrRows"><div class="muted small">等待出口检测…</div></div>
+    </div>
+  </div>
+
+  <div class="duo-grid" style="margin-top:14px">
+    <div class="card">
+      <p class="card-title">CHATGPT 出口IP安全检测</p>
+      <div class="kv-rows" id="secRows"><div class="muted small">等待出口检测…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title" style="gap:4px">CHATGPT 可用性检测 <span class="muted small" title="对官方端点发起真实请求测得">ⓘ</span>
+        <button class="btn btn-ghost small" id="refreshAvail" style="margin-left:auto">刷新</button></p>
+      <div class="kv-rows" id="availRows"><div class="muted small">检测中…</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CHATGPT 服务状态<span id="svcStatus" style="margin-left:auto"><span class="muted small">查询中…</span></span></p>
+  </div>
+
+  <div class="duo-grid" style="margin-top:14px">
+    <div class="card">
+      <p class="card-title">DNS 泄露检测 <button class="btn btn-ghost small" id="goDns" style="margin-left:auto">查看DNS安全</button></p>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">状态</span><span class="v" id="dnsStatus"><span class="spin"></span></span></div>
+        <div class="kv-row"><span class="k">DNS 出口</span><span class="v ip-cell" id="dnsExit">—</span></div>
+        <div class="kv-row"><span class="k">服务商</span><span class="v" id="dnsIsp">—</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">WEBRTC UDP 泄露检测 <button class="btn btn-ghost small" id="goUdp" style="margin-left:auto">深度查询</button></p>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">状态</span><span class="v" id="udpStatus"><span class="spin"></span></span></div>
+        <div class="kv-row"><span class="k">UDP 出口</span><span class="v ip-cell" id="udpExit">—</span></div>
+        <div class="kv-row"><span class="k">归属地</span><span class="v" id="udpGeo">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CHATGPT 出口IP用户设备信息 <span class="muted small" style="margin-left:auto">指纹仅在本地计算，不上传</span></p>
+    <div class="kv-rows" id="deviceRows"><div class="muted small">等待出口检测…</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">CHATGPT 出口 IP 历史记录
+      <button class="btn btn-ghost small" id="clearHist" style="margin-left:auto">清除</button></p>
+    <p class="muted small" style="margin-top:-6px" id="histNote">0 记录 · 100% 隐私友好 · 历史数据仅存浏览器本地，方便查阅</p>
+    <div class="kv-rows" id="histRows"><div class="muted small">暂无记录</div></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>ChatGPT / Codex 实时服务状态怎么查？</summary><div class="read-body">OpenAI 官方状态页实时汇总 ChatGPT 与 API 的可用性，本站「服务状态」页面会自动聚合。出现大面积异常时先看状态页，再排查本地代理线路。</div></details>
+    <details class="read-card"><summary>家宽、机房、原生 IP 有什么区别？</summary><div class="read-body">家宽（ISP）IP 信任度最高；机房（Hosting）IP 被批量使用、风控更敏感；"原生"指 IP 归属地与注册地一致。本页信任评分基于这三类计算，并叠加代理特征检测。</div></details>
+    <details class="read-card"><summary>时区与语言不一致会有影响吗？</summary><div class="read-body">出口在美国但浏览器是 UTC+8 + 中文，是风控的常见信号之一，会推高整体风险评分，但单独出现通常不触发封禁。尽量让浏览器环境与出口一致更稳妥。</div></details>
+    <details class="read-card"><summary>API 返回 401 说明什么？</summary><div class="read-body">本页对 api.openai.com 发起未带密钥的请求，官方返回 401 属于预期结果——它证明网络与 API 边缘完全可达。若显示"不可达"，说明当前出口根本连不上 OpenAI。</div></details>
+    <details class="read-card"><summary>WebRTC 泄露对 AI 账号意味着什么？</summary><div class="read-body">如果 STUN 看到的地址与出口不同，说明 UDP 没走代理，真实宽带 IP 可能已暴露。部分风控会比对"注册地"与"常用出口"，建议保持 UDP 也走代理（TUN 模式）。</div></details>
+    <details class="read-card"><summary>DNS 泄露为什么也要查？</summary><div class="read-body">明文 DNS 会把访问的域名暴露给本地网络，并可能被用于推断位置。「DNS泄露」页面的唯一子域名检测可以验证你的解析是否已加密。</div></details>
+    <details class="read-card"><summary>Codex / API 用户与网页用户的差异</summary><div class="read-body">Codex 和 API 调用主要看出口 IP 与密钥绑定情况，浏览器指纹影响较小；网页版则会综合 IP、设备、指纹、行为。两者共用同一出口时，保持出口稳定最重要。</div></details>
+    <details class="read-card"><summary>出口 IP 频繁变化有影响吗？</summary><div class="read-body">频繁跨国家/跨运营商切换出口会显著推高风控评分。本页底部的「出口 IP 历史记录」（仅存本地）可以帮你回顾最近的出口变化轨迹。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · ChatGPT · Codex IP 检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/purity.js?v=AUTO"></script>
+<script src="/assets/js/gpt.js?v=AUTO"></script>
+</body>
+</html>

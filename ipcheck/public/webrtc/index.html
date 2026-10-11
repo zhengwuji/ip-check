@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRTC 泄露检测 - NetProbe</title>
+<meta name="description" content="通过 STUN 检测 WebRTC 是否暴露真实 IP：区分本地 IP、STUN 公网 IP、mDNS 保护状态，并与 HTTP 出口对比。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>WebRTC 泄露检测</h1>
+  <p class="desc">WebRTC 是浏览器内置的实时通信技术，它可能绕过代理直接暴露你的真实 IP。点击下方按钮，检测你的浏览器是否存在 WebRTC 泄露。</p>
+
+  <div class="feature-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    <div class="feature-card"><div class="ico">📍</div><div class="t">STUN 多节点探测</div><div class="d">同时向多个 STUN 服务器发送 UDP 请求，快速交叉验证</div></div>
+    <div class="feature-card"><div class="ico">💧</div><div class="t">UDP 分流校验</div><div class="d">检测是否正确接管了 UDP 流量，验证分流规则是否如预期</div></div>
+  </div>
+
+  <div style="text-align:center;margin:18px 0 6px">
+    <button class="btn" id="startBtn" style="min-width:130px">开始检测</button>
+    <span class="muted small" id="statusText" style="margin-left:10px"></span>
+    <div class="muted small" style="margin-top:8px">点击上方按钮，立即检测 WebRTC 是否泄露</div>
+  </div>
+
+  <div id="verdictArea"></div>
+
+  <div class="card">
+    <p class="card-title">HTTP（TCP）出口</p>
+    <div class="kv-grid" id="httpIp"></div>
+  </div>
+
+  <div class="card" id="natCard" style="display:none">
+    <p class="card-title">NAT 类型判定</p>
+    <div class="kv-grid" id="natBody"></div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">ICE 候选地址</p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:620px">
+      <thead><tr><th>STUN 服务器</th><th>类型</th><th>地址</th><th>说明</th></tr></thead>
+      <tbody id="candBody"><tr><td colspan="4" class="muted small">尚未检测</td></tr></tbody>
+    </table></div>
+    <p class="muted small" style="margin-bottom:0">类型说明：<b>host</b> = 本地/局域网地址；<b>srflx</b> = STUN 看到的公网地址；<b>relay</b> = TURN 中继地址。显示 <code>….local</code> 说明浏览器已启用 mDNS 混淆保护。</p>
+  </div>
+
+  <div class="card" id="sdpCard" style="display:none">
+    <p class="card-title">SDP 协商日志</p>
+    <p class="muted small" style="margin-top:-6px">本次检测中浏览器生成的 SDP offer 与逐条 ICE 候选（原样记录，可在代理软件调试时对照使用）：</p>
+    <div id="sdpArea" class="read-grid"></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>WebRTC 泄露是怎么回事？</summary><div class="read-body">WebRTC 建立连接时要先弄清"我在公网上的地址是什么"，于是向 STUN 服务器发 UDP 包询问。这个询问不经过 HTTP 代理，如果代理方案没接管 UDP，STUN 就会看到你的真实宽带 IP。</div></details>
+    <details class="read-card"><summary>STUN 和 UDP 是什么？</summary><div class="read-body">UDP 是无连接的传输协议，音视频通话多用它来降低延迟；STUN 是帮内网设备弄清自己"公网门牌号"的辅助协议。两者组合让通话更快，也让泄露更隐蔽。</div></details>
+    <details class="read-card"><summary>发现泄露了，怎么修？</summary><div class="read-body">优先方案：使用全局/TUN 模式的代理客户端，或在浏览器安装 WebRTC 控制扩展并禁用非中继候选；企业环境可在防火墙层拦截 UDP 3478/19302 等	STUN 端口。</div></details>
+    <details class="read-card"><summary>多个出口 IP？不一定是 WebRTC 泄露</summary><div class="read-body">host 候选里的 192.168.x.x / 10.x.x.x 只是局域网地址，mDNS（….local）更是浏览器的隐私保护。真正需要关注的是 srflx（公网）候选与 HTTP 出口是否一致。</div></details>
+    <details class="read-card"><summary>除了 WebRTC，DNS 泄露同样危险</summary><div class="read-body">DNS 明文查询会暴露你访问的域名，也能被用来推断位置。建议做完本页检测后，再到「DNS泄露」页面跑一轮唯一子域名检测。</div></details>
+    <details class="read-card"><summary>为什么代理模式和 TUN 模式检测结果不同</summary><div class="read-body">普通代理模式只接管浏览器发出的 TCP；TUN/增强模式在系统层接管全部流量（含 UDP），所以 STUN 探测也会走代理出口，两种模式下的 srflx 地址会不同。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · WebRTC 泄露检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/webrtc.js?v=AUTO"></script>
+</body>
+</html>

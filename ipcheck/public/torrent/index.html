@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torrent 地址检测 - NetProbe</title>
+<meta name="description" content="通过专属 Magnet 链接检测 BT 客户端的真实出口 IP：Tracker 记录 announce 来源并实时回显，判断 BT 流量是否与浏览器走了同一条出口。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>Torrent 地址检测</h1>
+  <p class="desc">挂了代理，但 BT 客户端真的在走代理吗？把下面的 Magnet 链接添加到你的 BT 客户端，它会主动向本站 Tracker「报到」，这里会实时显示它报到的出口 IP——这正是种子网络里别人看到你的地址。</p>
+
+  <div class="feature-grid">
+    <div class="feature-card"><div class="ico">🧲</div><div class="t">专属标识</div><div class="d">每位访客生成独立 info_hash</div></div>
+    <div class="feature-card"><div class="ico">📡</div><div class="t">真实 announce</div><div class="d">记录 BT 客户端主动上报的出口</div></div>
+    <div class="feature-card"><div class="ico">🔁</div><div class="t">实时回显</div><div class="d">每 5 秒自动刷新结果</div></div>
+    <div class="feature-card"><div class="ico">🕶️</div><div class="t">不留底</div><div class="d">2 小时后服务端自动清除</div></div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">第一步：把这个 Magnet 链接添加到 BT 客户端</p>
+    <p class="muted small" style="margin-top:-6px">支持 qBittorrent、Transmission、µTorrent、Deluge、迅雷等任何 BitTorrent 客户端。添加后无需下载任何内容，客户端会自动向本站 Tracker 发送 announce。</p>
+    <p style="word-break:break-all;background:var(--bg, rgba(127,127,127,.08));padding:10px 12px;border-radius:8px;font-family:ui-monospace,monospace;font-size:.82em;margin:10px 0" id="magnetText"></p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <a class="btn" id="magnetOpen" href="#" style="text-decoration:none">🧲 一键添加到 BT 客户端</a>
+      <button class="btn btn-ghost" id="copyBtn" type="button">复制链接</button>
+      <button class="btn btn-ghost" id="resetBtn" type="button">换一个标识</button>
+      <span class="muted small" id="copyTip"></span>
+    </div>
+  </div>
+
+  <div class="card" id="btCard">
+    <p class="card-title">第二步：等待结果（BT 客户端 announce 的出口）</p>
+    <p class="muted small" style="margin-top:-6px">每 5 秒自动刷新。<span id="btUpdated"></span></p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:640px">
+      <thead><tr><th>出口 IP</th><th>端口</th><th>客户端</th><th>事件</th><th>首次报到</th><th>最近报到</th><th>次数</th></tr></thead>
+      <tbody id="btBody"><tr><td colspan="7" class="muted small">暂无数据——请先确认 Magnet 链接已添加到 BT 客户端。通常添加后几秒内就会出现第一条记录。</td></tr></tbody>
+    </table></div>
+    <details style="margin-top:10px"><summary class="muted small" style="cursor:pointer">查看请求记录（JSON）</summary><pre id="btDump" class="muted small" style="white-space:pre-wrap;word-break:break-all">（暂无）</pre></details>
+  </div>
+
+  <div class="card">
+    <p class="card-title">本机出口 IP 参考（浏览器侧）</p>
+    <div class="kv-grid" id="selfIp"></div>
+    <p class="muted small">把这里显示的 IP 与上方 BT 客户端的出口对照：一致说明 BT 与浏览器走同一条线路；不一致说明分流规则没有接管 BT 流量。</p>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>Torrent 地址检测能查出什么？</summary><div class="read-body">最直接的答案是：你的 BT 客户端连出去时用的公网 IP。把它与浏览器出口对照，就能判断代理/VPN 是否真的接管了 BT 流量。同时它也是一面镜子——Tracker 能看到你，那么同一 swarm 里的其他 peer 与版权方同样能看到。</div></details>
+    <details class="read-card"><summary>为什么挂了代理，BT 还是暴露真实 IP？</summary><div class="read-body">常见原因是代理只接管了浏览器的 HTTP/HTTPS 流量，而 BT 客户端默认直连（系统代理对它通常无效）。此外 DHT、PEX、本地发现等去中心化渠道根本不经过 Tracker，普通 HTTP 代理也拦不住它们。</div></details>
+    <details class="read-card"><summary>怎么让 BT 走代理？</summary><div class="read-body">两条路：一是在 BT 客户端里手动配置代理（qBittorrent：设置→连接→代理服务器，并勾选「使用代理进行与 peer 的通信」；Transmission：编辑→偏好设置→网络→代理）；二是让代理客户端开启 TUN/虚拟网卡模式，接管整机 UDP 与 TCP 流量。配置后回到本页重测即可验证。</div></details>
+    <details class="read-card"><summary>这个检测的原理和局限</summary><div class="read-body">原理：本页为你生成一个随机 info_hash，Magnet 链接里唯一的 Tracker 是本站地址。客户端添加链接后会按 BitTorrent 标准协议向它发起 HTTP announce，Tracker 记录请求来源并回显。局限：它只覆盖「向本站 Tracker announce」这一条路径；若你的客户端无法访问本站域名，或只走 DHT，这里就不会有数据。</div></details>
+    <details class="read-card"><summary>隐私说明</summary><div class="read-body">info_hash 是浏览器随机生成、仅存于本次会话的标识，不含任何账号信息；结果页只有持有同一 info_hash 的人（也就是你这个页面）能查到；服务端记录会在 2 小时无活动后自动清除。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · Torrent 地址检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/torrent.js?v=AUTO"></script>
+</body>
+</html>

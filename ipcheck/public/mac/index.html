@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAC 地址查询 - NetProbe</title>
+<meta name="description" content="查询 MAC（物理）地址的制造商归属、单播/组播、全球唯一/本地管理属性，识别随机化地址。支持完整地址与前缀查询，数据来自 IEEE OUI 注册库。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>MAC 地址查询</h1>
+  <p class="desc">查询一个物理地址（MAC 地址）所属的制造商与基本属性。前 3 个字节叫 OUI（组织唯一标识符），由 IEEE 统一分配，决定了「这块网卡是谁造的」；后 3 个字节由厂商自行分配。支持完整 12 位查询，也支持只输前 6 位（前缀查询）。全部数据在本机检索，不会发送到任何地方。</p>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="mac" placeholder="例如 F0:2F:4B:01:0A:AA，或前缀 F0:2F:4B" style="flex:1;min-width:220px" autocomplete="off" spellcheck="false">
+      <button class="btn" id="runBtn" style="min-width:100px">查询</button>
+    </div>
+    <div class="muted small" style="margin-top:8px">试试：
+      <a href="javascript:void(0)" data-demo="F0:2F:4B:01:0A:AA">F0:2F:4B:01:0A:AA</a> ·
+      <a href="javascript:void(0)" data-demo="00:50:56:C0:00:08">00:50:56:C0:00:08</a> ·
+      <a href="javascript:void(0)" data-demo="3C:22:FB">3C:22:FB</a> ·
+      <a href="javascript:void(0)" data-demo="AC-DE-48-00-11-22">AC-DE-48-00-11-22</a> ·
+      <a href="javascript:void(0)" data-demo="DA:A1:19:7F:3C:B5">DA:A1:19:7F:3C:B5（随机化示例）</a>
+    </div>
+    <span class="muted small" id="progressText" style="display:block;margin-top:8px"></span>
+  </div>
+
+  <div id="outArea"></div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>什么是随机化 MAC？为什么 Wi-Fi 里会看到「本地管理」的地址？</summary><div class="read-body">iOS/Android/Windows 连 Wi-Fi 时默认使用随机生成的假 MAC，特征是倒数第 2 个二进制位为 1（即第二个十六进制位是 2/6/A/E），并把「全球唯一」位置 0（本地管理）。这能有效防止商场 Wi-Fi 通过 MAC 追踪你的到访记录。</div></details>
+    <details class="read-card"><summary>单播/组播位和全球/本地位在哪？</summary><div class="read-body">MAC 第一个字节的最低位（I/G 位）：0=单播（一块网卡），1=组播/广播；倒数第二位（U/L 位）：0=全球唯一（IEEE 分配），1=本地管理（自定义/随机）。判断时只看第一个字节。</div></details>
+    <details class="read-card"><summary>MAC 会被网站看到吗？</summary><div class="read-body">不会。MAC 只在局域网二层使用，路由器转发时会重写，互联网上的服务器不可能拿到你的 MAC。它泄露的场景是：你连接的 Wi-Fi 热点、同一局域网内的设备，以及某些 App 读取手机「随机 MAC 之外」的固定标识。</div></details>
+    <details class="read-card"><summary>能通过 MAC 定位设备品牌型号吗？</summary><div class="read-body">只能定位到「制造商」这一级（OUI 注册方），例如显示 Apple 或 Xiaomi，看不出具体型号；且一个制造商会持有大量 OUI。有些厂商还把 OUI 授权给代工厂使用，归属会有偏差。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · MAC 地址查询（OUI 数据：IEEE 注册局，本机检索）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/mac.js?v=AUTO"></script>
+</body>
+</html>

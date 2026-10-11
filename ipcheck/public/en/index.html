@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetProbe - IP &amp; Network Toolkit</title>
+<meta name="description" content="A free suite of network tools: IP lookup, IP risk scoring, split-routing audit, Cloudflare edge tests, DNS leak, WebRTC, global ping, service status and more. Chinese UI available.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>NetProbe <span class="muted" style="font-size:0.55em;font-weight:600">IP &amp; Network Toolkit</span></h1>
+  <p class="desc">A free, no-signup suite of browser-side network diagnostics. Everything runs against live data; your queries are never logged. The detailed tool pages are in Chinese — each card below links straight in.</p>
+
+  <div class="duo-grid">
+    <div class="card">
+      <p class="card-title">🔍 IP Lookup &amp; Split-Routing Audit</p>
+      <p class="muted small">See which exit IP each major site group really sees when you visit it — the quickest way to verify proxy rules. <a href="/">Open →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">⭐ IP Risk Scoring</p>
+      <p class="muted small">Residential vs datacenter, human-traffic estimate, 12 DNSBL sources, RPKI, BGP upstreams, ASN intel, geolocation history, latency probes and a map. <a href="/ip/">Open →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">⚖️ IP Comparison</p>
+      <p class="muted small">Put two exit IPs side by side — type, purity, ASN, blocklists, risk signals. Ideal for "before vs after switching nodes". <a href="/compare/">Open →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">☁️ Cloudflare Tests</p>
+      <p class="muted small">Which edge colo you hit per network tier, Turnstile human-verification, segmented speed test, environment risk assessment. <a href="/cloudflare/">Open →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">🤖 AI Service Checks</p>
+      <p class="muted small">Exit-IP trust scoring for ChatGPT and Claude, plus live service status from official status pages. <a href="/gpt/">ChatGPT →</a> <a href="/claude/">Claude →</a> <a href="/status/">Status →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">🛡 DNS / WebRTC / Connectivity</p>
+      <p class="muted small">DNS leak test, WebRTC STUN exposure, reachability of 48 popular sites, global ping from 20+ vantage points. <a href="/dns/">DNS →</a> <a href="/webrtc/">WebRTC →</a> <a href="/link/">Link →</a> <a href="/ping/">Ping →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">🪪 IP Card Generator</p>
+      <p class="muted small">Embeddable SVG badge: every visitor renders their own IP, country, ASN and purity score. 12 themes, stickers, Markdown/BBCode snippets. <a href="/card/">Open →</a></p>
+    </div>
+    <div class="card">
+      <p class="card-title">📚 Public API</p>
+      <p class="muted small">Read-only JSON endpoints (GeoIP, risk, scoring, cards) with per-IP rate limits — free, no key. <a href="/docs/">API docs →</a></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="guide-h2" style="margin-top:0">Privacy</h2>
+    <p style="margin-bottom:0">Probes run from your browser directly against public endpoints. Node history and card preferences stay in your browser's local storage. The server keeps no per-visitor logs; shared report links store only the snapshot fields you see on them, for 30 days.</p>
+  </div>
+
+  <div class="card">
+    <p class="muted small" style="margin-bottom:0">中文界面：<a href="/">返回中文版 →</a></p>
+  </div>
+
+  <footer class="site-footer">NetProbe · English overview · tool pages open in Chinese</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script>
+  // 英文页不做中文导航高亮处理，直接复用导航
+</script>
+</body>
+</html>

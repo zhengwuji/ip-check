@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全检查清单 - NetProbe</title>
+<meta name="description" content="一份覆盖账户、浏览、邮件、通讯、设备与家庭网络的网络安全自查清单：逐项勾选、按优先级推进，进度保存在你自己的浏览器里。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>安全检查清单</h1>
+  <p class="desc">这是一份偏实用主义的网络安全自查清单：从账号密码到家庭路由器，逐项核对「该做的是否已经做了」。清单内容较多，不必一口气做完——每完成一项就勾选一项，进度保存在你自己的浏览器里，随时回来继续。拿不准的项可以先「忽略」，不影响总进度统计。</p>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">检查进度
+      <button class="btn btn-ghost small" id="resetBtn" style="margin-left:auto">重置全部进度</button></p>
+    <div class="cl-summary" id="clSummary"></div>
+    <div class="cl-catbars" id="clCatBars"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap" id="clNav"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px" id="clFilter"></div>
+  </div>
+
+  <div id="clSections"></div>
+
+  <p class="read-section-title">📖 使用建议</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>从哪一类开始做？</summary><div class="read-body">先做「身份验证」类：密码管理器 + 两步验证能挡住绝大多数账号盗用；然后是「设备与电脑」的系统更新。剩下的按你的实际使用场景挑着做即可。</div></details>
+    <details class="read-card"><summary>「忽略」是什么意思？</summary><div class="read-body">忽略表示「这项与我的情况无关，或不打算做」。被忽略的项不计入未完成数量，进度条按（已检查 + 已忽略）/ 总数推进，避免永远做不到 100% 的挫败感。</div></details>
+    <details class="read-card"><summary>进度存在哪里？会不会上传？</summary><div class="read-body">只存在当前浏览器的本地存储里，不上传、不同步、不注册。换浏览器或清空浏览器数据后进度会归零——清单本身不涉及隐私，重新勾选也很快。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 安全检查清单（进度仅存于本机浏览器）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/checklist.js?v=AUTO"></script>
+</body>
+</html>

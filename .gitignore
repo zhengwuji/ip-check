@@ -1,0 +1,26 @@
+# 敏感/部署配置（不入库）
+_deploy/
+.dev.vars
+.env
+.env.*
+*.pem
+*.key
+
+# 运行时数据（自动生成，含访问缓存与令牌）
+ipcheck/data/
+
+# 依赖
+node_modules/
+
+# 构建产物（Workers 版 public 由 scripts/prepare.js 生成）
+Workers 和 Pages/public/
+
+# 临时与研究文件
+_tmp/
+_analysis/
+*.log
+*.tar.gz
+
+# 系统
+Thumbs.db
+.DS_Store

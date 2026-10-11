@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 计算器 - NetProbe</title>
+<meta name="description" content="粘贴 IPv4/IPv6 地址、CIDR 前缀、地址范围、前缀列表或纯数字，自动识别类型并本地计算：子网信息、IPv6 解读、范围转最少 CIDR、前缀合并。全部在浏览器内完成，不上传任何内容。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>IP 计算器</h1>
+  <p class="desc">粘贴一个 IPv4 或 IPv6 地址、CIDR 前缀、地址范围、前缀列表或纯数字，计算器会自动识别输入类型，只展示适用的结果。适合这些场景：划分子网时要知道网络地址、广播地址、可用主机数、掩码与反掩码；拿到一个 IPv6 地址想看懂它的类型、内嵌的 IPv4、接口标识有没有暴露 MAC；写防火墙规则时要把一段范围换成最少的 CIDR，或者把一长串前缀合并；日志里出现一串数字，想还原成正常的地址。全部在浏览器本地计算，不会发送到任何地方。</p>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="expr" placeholder="例如 192.168.1.0/24、2001:db8::/32、10.0.0.5-10.0.0.20、3221226219" style="flex:1;min-width:240px" autocomplete="off">
+      <button class="btn" id="calcBtn" style="min-width:100px">计算</button>
+      <button class="btn btn-ghost" id="demoBtn">示例</button>
+    </div>
+    <div style="margin-top:8px"><span class="badge" id="kindBadge" style="display:none"></span></div>
+  </div>
+
+  <div id="outArea"></div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>掩码和反掩码分别用在哪？</summary><div class="read-body">掩码（如 255.255.255.0）用于划定网络位；反掩码（wildcard，如 0.0.0.255）常见于 Cisco 式 ACL 与路由协议配置——两条是同一个前缀的两种写法，按位取反即可互转。</div></details>
+    <details class="read-card"><summary>可用主机数为什么要减 2？</summary><div class="read-body">IPv4 网段里，主机位全 0 是网络地址本身、全 1 是广播地址，都不能分配给设备。例外是 /31（点对点，两个地址都可用）和 /32（单主机，无网络/广播之分）。</div></details>
+    <details class="read-card"><summary>IPv6 里怎么看出这台设备的真实 MAC？</summary><div class="read-body">如果接口标识（后 64 位）形如 XX:XX:XXff:feXX:XXXX，说明是 EUI-64 生成的：把第 7 个字节的 universal 位翻转，就还原出网卡 MAC。现代系统默认改用随机接口标识（RFC 7217/8981），就不会暴露 MAC 了。</div></details>
+    <details class="read-card"><summary>「范围转最少 CIDR」有什么用？</summary><div class="read-body">防火墙/ACL 规则通常只接受 CIDR 写法。给定任意起止地址（如 10.0.0.5 到 10.0.0.20），用贪心算法可拆成数量最少的对齐前缀，一条规则覆盖整段。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · IP 计算器（纯本地计算）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/ipcalc.js?v=AUTO"></script>
+</body>
+</html>

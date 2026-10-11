@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球主流互联网可用性一站式查询 - NetProbe</title>
+<meta name="description" content="轻松掌握主流云服务、AI 平台、工具及社区的运行状况，如服务出现故障则自动置顶提示。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>全球主流互联网可用性一站式查询</h1>
+  <p class="desc">轻松掌握主流云服务、AI 平台、工具及社区的运行状况，如服务出现故障则自动置顶提示。数据来自各服务官方状态页，告别逐个查询。</p>
+
+  <div class="summary-banner" id="summaryBanner">
+    <div class="big"><span class="spin"></span> 正在获取各官方状态页…</div>
+  </div>
+
+  <div id="badSection" style="display:none">
+    <p class="group-title" style="color:var(--bad)">⚠ 当前故障</p>
+    <div class="st-grid" id="badArea"></div>
+  </div>
+
+  <p class="group-title">运行中 <span class="muted small" id="okCount" style="margin-left:auto"></span></p>
+  <div class="st-grid" id="okArea"></div>
+
+  <div style="margin-top:10px">
+    <button class="btn btn-ghost" id="refreshBtn">↻ 刷新全部</button>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <p class="card-title">巡检历史 <span class="muted small" style="font-weight:400">服务端每 5 分钟自动巡检一次官方状态页，记录状态变化</span></p>
+    <div id="patrolHistory"><div class="muted small">读取中…</div></div>
+  </div>
+
+  <footer class="site-footer">NetProbe · 服务状态监控</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/status.js?v=AUTO"></script>
+</body>
+</html>

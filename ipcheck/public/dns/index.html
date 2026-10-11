@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS 泄露检测 - NetProbe</title>
+<meta name="description" content="检测你的 DNS 解析器出口：唯一子域名触发真实解析 + DoH TXT 回显，判断 DNS 是否被加密或劫持。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>DNS 泄露检测</h1>
+  <p class="desc">知道吗？DNS 可能正在悄悄暴露你的真实上网位置。一键检测，看看 DNS 有没有在背后出卖你的信息。</p>
+
+  <div class="feature-grid">
+    <div class="feature-card"><div class="ico">🔐</div><div class="t">自建权威 DNS</div><div class="d">数据查询更安全</div></div>
+    <div class="feature-card"><div class="ico">⚡</div><div class="t">检测更快</div><div class="d">5 秒出结果</div></div>
+    <div class="feature-card"><div class="ico">🎯</div><div class="t">准确可靠</div><div class="d">唯一子域名精准记录</div></div>
+    <div class="feature-card"><div class="ico">🛡️</div><div class="t">隐私优先</div><div class="d">0 记录，0 日志，0 存储</div></div>
+  </div>
+
+  <div style="text-align:center;margin:18px 0 6px">
+    <button class="btn" id="fastBtn" style="min-width:130px">快速测试</button>
+    <button class="btn btn-ghost" id="deepBtn" style="min-width:130px;margin-left:12px">深度测试</button>
+    <div class="muted small" id="progressText" style="margin-top:8px">点击上方按钮，立即检测你的 DNS 是否安全</div>
+    <div class="progress-line" id="progress" style="max-width:420px;margin:8px auto 0"><i style="width:0%"></i></div>
+  </div>
+
+  <div id="verdictArea"></div>
+
+  <div class="card" id="resolverCard" style="display:none">
+    <p class="card-title">你的 DNS 解析器出口（唯一子域名法）</p>
+    <p class="muted small" style="margin-top:-6px">随机子域名被你的设备解析后，权威 DNS 记录到的查询来源 IP：</p>
+    <div id="resolverList"></div>
+  </div>
+
+  <div class="card" id="dohCard" style="display:none">
+    <p class="card-title">公共 DoH 出口对照（TXT 回显法）</p>
+    <p class="muted small" style="margin-top:-6px">分别通过各家公共 DoH 解析 Google 的回显域名 <code>o-o.myaddr.l.google.com</code>，TXT 记录会返回"实际查询它的解析器出口 IP"：</p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:560px">
+      <thead><tr><th>DoH 服务商</th><th>回显解析出口</th><th>归属</th></tr></thead>
+      <tbody id="dohBody"></tbody>
+    </table></div>
+    <p class="muted small" id="dohNote" style="display:none">注：标注「服务器代查」的服务商不开放浏览器跨域查询，结果由本站服务器代为解析，反映的是服务器侧的解析出口，不代表你本机的 DNS 路径；其余行为你浏览器本机直查，可与你自己的出口 IP 对照。</p>
+  </div>
+
+  <div class="card">
+    <p class="card-title">本机出口 IP 参考</p>
+    <div class="kv-grid" id="selfIp"></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>DNS 泄露是什么？为什么你应该在意？</summary><div class="read-body">你访问网站前，浏览器都会先把域名交给 DNS 解析成 IP。如果你挂着代理但 DNS 仍用运营商的明文解析，网站看不到你的真实 IP，但运营商能看到你"正在访问哪个域名"。更糟的是，部分网站会通过你使用的 CDN 节点位置推断你的大致方位——这就是泄露。</div></details>
+    <details class="read-card"><summary>发现 DNS 泄露了，怎么修？</summary><div class="read-body">最直接的方案：把设备或路由器的 DNS 改为可信的加密服务（DoH/DoT），或在代理客户端里开启"DNS 劫持 / 虚拟 DNS（fake-IP）"模式，让所有解析都走代理隧道完成。</div></details>
+    <details class="read-card"><summary>为什么用了代理，DNS 还是会泄露？</summary><div class="read-body">常见原因是"分流规则只接管了 TCP 流量，没接管 UDP 53 的 DNS 查询"；或者浏览器开启了自己的 DoH，绕过了代理的 DNS 设置；也可能是系统多网卡（IPv4 走代理、IPv6 直连）导致的旁路泄露。</div></details>
+    <details class="read-card"><summary>DoH、DoT、普通 DNS 有什么区别？哪个最安全？</summary><div class="read-body">普通 DNS 是明文 UDP 53，链路上任何节点都能看到并篡改；DoT（853 端口）与 DoH（443 端口）都是 TLS 加密，DoH 因为与网页流量同端口、更难被识别和封锁。安全性：DoH ≥ DoT ≫ 普通 DNS。</div></details>
+    <details class="read-card"><summary>WebRTC 泄露又是什么鬼？</summary><div class="read-body">WebRTC 为了音视频通话质量，会通过 STUN 协议直接用 UDP 探测你的公网地址，这个过程可以绕过仅代理 HTTP/S 流量的方案。可以到「WebRTC」页面做一次 UDP 快检。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · DNS 泄露检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/dns.js?v=AUTO"></script>
+</body>
+</html>

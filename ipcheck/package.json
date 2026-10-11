@@ -1,0 +1,13 @@
+{
+  "name": "netprobe",
+  "version": "1.0.0",
+  "description": "NetProbe — IP 查询 / 分流测试 / DNS·WebRTC 泄露检测 / IP 评分 / Whois / 服务状态监控",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}

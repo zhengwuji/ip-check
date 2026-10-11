@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浏览器指纹检测 - Canvas / WebGL / 音频 / 字体 - NetProbe</title>
+<meta name="description" content="在浏览器本地计算设备指纹：Canvas、WebGL、音频栈、已装字体、数学函数精度、屏幕与硬件特征，合成稳定指纹 ID，并可查看 TLS ClientHello 握手指纹。全部本地计算，不上传。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>浏览器指纹检测</h1>
+  <p class="desc">采集浏览器与设备的 Canvas / WebGL / 音频栈 / 字体 / 数学精度等特征，在本地合成一份稳定指纹。即使清除 Cookie、使用无痕窗口，同样的环境仍会得到同一个指纹 ID。</p>
+
+  <div class="card">
+    <p class="card-title">指纹 ID
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-ghost small" id="fpCopy">复制</button>
+        <button class="btn small" id="fpRecalc">重新计算</button>
+      </span></p>
+    <div class="fp-id-box mono" id="fpId">计算中…</div>
+    <p class="muted small" id="fpTime" style="margin:8px 0 0"></p>
+    <p class="muted small" style="margin:6px 0 0">同一浏览器、同一硬件与设置下指纹稳定；无痕窗口、防指纹浏览器或隐私扩展会改变结果——这本身就是识别「环境是否被伪装」的参考。</p>
+  </div>
+
+  <div class="card" id="tlsCard" style="margin-top:14px;display:none">
+    <p class="card-title">TLS 握手指纹 <span class="muted small" style="margin-left:auto">由服务器读取本次连接的 ClientHello 摘要</span></p>
+    <div class="kv-rows" id="tlsRows"><div class="muted small">读取中…</div></div>
+    <p class="muted small" style="margin:8px 0 0">JA3 类指纹由 TLS ClientHello 的版本、密码套件、扩展列表、椭圆曲线与曲线格式拼接哈希而成，可区分浏览器内核、HTTP 客户端与自动化工具——换 UA 伪装浏览器时，TLS 指纹常常不会跟着变。</p>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">指纹组成信息 <span class="muted small" style="margin-left:auto">长值可展开</span></p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:560px">
+      <thead><tr><th style="width:180px">特征项</th><th>值</th></tr></thead>
+      <tbody id="fpBody"><tr><td colspan="2" class="muted small">计算中…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>什么是浏览器指纹？</summary><div class="read-body">把浏览器与设备的一组属性（字体、Canvas 渲染结果、显卡型号、音频栈输出、时区语言等）拼在一起做哈希，会得到一个几乎唯一的标识。它不需要存储任何 Cookie，就能在跨站、跨会话时认出同一台设备，广泛用于广告追踪、风控与反作弊。</div></details>
+    <details class="read-card"><summary>指纹可以改变吗？</summary><div class="read-body">可以，但很难改得干净。防指纹浏览器会随机化 Canvas、音频、字体等输出，让每次指纹都不同；但屏幕分辨率、硬件核心数等特征若不跟着变，反而形成「声称被随机化但底层特征稳定」的矛盾信号。普通用户最有效的做法是减少浏览器扩展、避免过小众的字体与硬件组合。</div></details>
+    <details class="read-card"><summary>为什么我的指纹和别人不一样？</summary><div class="read-body">指纹由几十项特征共同决定，任何一项不同都会改变最终 ID：操作系统与版本、已装字体、显卡驱动、浏览器隐私设置（如 Canvas 防护）、甚至系统缩放比例。指纹「独特」本身不等于危险，只是意味着你更容易被单独识别。</div></details>
+    <details class="read-card"><summary>TLS 指纹为什么重要？</summary><div class="read-body">TLS ClientHello 是 HTTPS 连接的第一个包，里面的版本、密码套件与扩展顺序由客户端实现决定。JA3/JA4 就是把这部分信息哈希成的网络层指纹。用工具伪装 User-Agent 时，TLS 指纹仍会暴露真实客户端，因此风控系统经常把它作为「UA 是否可信」的交叉验证。</div></details>
+    <details class="read-card"><summary>本页会保存我的指纹吗？</summary><div class="read-body">不会。所有特征采集与哈希计算都在你的浏览器里完成，结果只显示给你自己；页面不会把指纹或组件值发送到任何服务器，刷新或离开页面后即消失。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 浏览器指纹检测 · 全部本地计算，不上传任何数据</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/fingerprint.js?v=AUTO"></script>
+</body>
+</html>

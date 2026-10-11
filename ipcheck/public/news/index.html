@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 资讯 - Claude / OpenAI 实时动态 - NetProbe</title>
+<meta name="description" content="实时聚合 Hacker News 上关于 Claude、Anthropic、OpenAI、ChatGPT、Gemini、Codex 等 AI 平台的最新讨论与动态，支持标签筛选与分页浏览。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>AI 资讯</h1>
+  <p class="desc">实时聚合 Hacker News 上关于 Claude、Anthropic、OpenAI、ChatGPT、Gemini、Codex 等 AI 平台的讨论与动态，按发布时间排序，支持标签筛选与分页浏览。</p>
+
+  <div class="card">
+    <div class="chip-row" id="newsChips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <p class="muted small" style="margin:8px 0 0">数据来源 <a href="https://news.ycombinator.com/" target="_blank" rel="noopener">Hacker News</a>（Algolia 公开检索接口），每小时自动更新缓存。</p>
+  </div>
+
+  <div id="newsList"></div>
+
+  <div class="pager" id="newsPager" style="display:none"></div>
+
+  <p class="read-section-title">📚 站内使用指南</p>
+  <p class="muted small" style="margin-top:-6px">散落在各检测页的「拓展阅读」合集，点开可在对应检测页内展开阅读。</p>
+
+  <p class="read-section-title" style="font-size:1em">🤖 Claude / Anthropic</p>
+  <div class="read-grid">
+    <a class="read-card" href="/claude/"><summary>Claude 实时服务状态怎么查？</summary><div class="read-body">看官方状态页与本站「服务状态」页的聚合结果，先排除官方故障再排查本地线路。</div></a>
+    <a class="read-card" href="/claude/"><summary>家宽、机房、原生 IP 有什么区别？</summary><div class="read-body">家宽信任度最高；机房 IP 风控更敏感；"原生"指归属地与注册地一致。</div></a>
+    <a class="read-card" href="/claude/"><summary>时区与语言不一致会有影响吗？</summary><div class="read-body">出口地与浏览器环境差异是常见风控信号，尽量保持环境与出口一致。</div></a>
+    <a class="read-card" href="/claude/"><summary>WebRTC 泄露对 AI 账号意味着什么？</summary><div class="read-body">STUN 看到的地址与出口不同说明 UDP 没走代理，建议开启 TUN 模式。</div></a>
+    <a class="read-card" href="/claude/"><summary>DNS 泄露为什么也要查？</summary><div class="read-body">明文 DNS 会暴露访问的域名，可被用于推断位置，唯一子域名检测可验证加密情况。</div></a>
+    <a class="read-card" href="/claude/"><summary>出口 IP 频繁变化有影响吗？</summary><div class="read-body">频繁跨国家/运营商切换会推高风控评分，本地的出口历史记录可帮你回顾轨迹。</div></a>
+  </div>
+
+  <p class="read-section-title" style="font-size:1em">💬 ChatGPT / Codex</p>
+  <div class="read-grid">
+    <a class="read-card" href="/gpt/"><summary>ChatGPT / Codex 实时服务状态怎么查？</summary><div class="read-body">OpenAI 官方状态页实时汇总 ChatGPT 与 API 可用性，本站服务状态页会自动聚合。</div></a>
+    <a class="read-card" href="/gpt/"><summary>API 返回 401 说明什么？</summary><div class="read-body">未带密钥的请求返回 401 属于预期，它恰好证明网络与 API 边缘完全可达。</div></a>
+    <a class="read-card" href="/gpt/"><summary>Codex / API 用户与网页用户的差异</summary><div class="read-body">API 主要看出口 IP 与密钥绑定；网页版综合 IP、设备、指纹与行为，保持出口稳定最重要。</div></a>
+    <a class="read-card" href="/gpt/"><summary>出口 IP 频繁变化有影响吗？</summary><div class="read-body">频繁切换出口会显著推高风控评分，用本页底部的本地历史回顾变化轨迹。</div></a>
+  </div>
+
+  <p class="read-section-title" style="font-size:1em">🌐 IP 与网络</p>
+  <div class="read-grid">
+    <a class="read-card" href="/ip/"><summary>人机流量与场景评估是什么？</summary><div class="read-body">机房网段机器流量占比高、家宽以人类流量为主；场景分数是基于运营商类型的本地估算。</div></a>
+    <a class="read-card" href="/ip/"><summary>RPKI / BGP 路由拓扑有什么用？</summary><div class="read-body">RPKI 验证路由来源合法性；上游拓扑可以看你的机房挂在哪些骨干网之下。</div></a>
+    <a class="read-card" href="/dns/"><summary>DNS 泄露是什么？为什么你应该在意？</summary><div class="read-body">明文解析会把你访问的域名暴露给本地网络，唯一子域名检测能捕获真实解析路径。</div></a>
+    <a class="read-card" href="/webrtc/"><summary>STUN 和 UDP 是什么？</summary><div class="read-body">WebRTC 通过 STUN 探测你的公网地址，可用于判断 UDP 流量是否被正确接管。</div></a>
+    <a class="read-card" href="/cloudflare/"><summary>Turnstile 人机验证为什么重要？</summary><div class="read-body">Cloudflare 风控的直观信号：非交互模式能否无感通过，反映当前 IP 的信誉状况。</div></a>
+    <a class="read-card" href="/whois/"><summary>WHOIS 和 RDAP 有什么区别？</summary><div class="read-body">RDAP 是新一代注册数据协议，结构化 JSON、数据更规范；本站双通道互为备份。</div></a>
+  </div>
+
+  <footer class="site-footer">NetProbe · AI 资讯</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/news.js?v=AUTO"></script>
+</body>
+</html>

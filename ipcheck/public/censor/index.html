@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>封锁测试 - NetProbe</title>
+<meta name="description" content="基于 OONI 全球志愿者网络的开放观测数据，查询一个网站过去 30 天在哪些国家/地区被屏蔽或干扰、异常率多少；并可用 Globalping 全球探针做实时连通性复核。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>封锁测试</h1>
+  <p class="desc">查询一个网站过去 30 天在全球哪些国家/地区被观测到屏蔽或干扰。数据来自 OONI（开放网络干预观测站）志愿者网络的公开测量记录：志愿者在本地运行探针访问目标网站，测得的异常会被匿名汇总上报。本页先做历史观测统计，再提供可选的「实时测试」——用全球探针现场访问一次目标域名做交叉验证。观测数据反映的是概率与趋势，不构成法律意义上的认定。</p>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="domain" placeholder="URL 或域名，例如 wikipedia.org" style="flex:1;min-width:220px" autocomplete="off">
+      <button class="btn" id="runBtn" style="min-width:120px">查询观测记录</button>
+    </div>
+    <span class="muted small" id="progressText" style="display:block;margin-top:8px"></span>
+    <div class="progress-line" id="progress"><i style="width:0%"></i></div>
+  </div>
+
+  <div id="obsArea"></div>
+
+  <div id="liveArea" style="display:none">
+    <div class="card" style="margin-top:14px">
+      <p class="card-title">实时测试 <span class="badge">Globalping 全球探针</span></p>
+      <p class="muted small" style="margin-top:-6px">从所选国家各发起 2 次真实访问（每个探针访问一次目标域名首页），两次结果一致时可信度较高。</p>
+      <div id="probePicker" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" id="liveBtn">开始实时测试</button>
+        <span class="muted small" id="liveText"></span>
+      </div>
+    </div>
+    <div id="liveResult"></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>OONI 的「异常」是怎么判定的？</summary><div class="read-body">OONI 探针在志愿者本地访问目标网站，与「控制点」（一份已知可正常访问的参照列表）的返回做对比：连接失败、TLS 握手被重置、返回内容与预期不符等都会记为异常（anomaly）；连续多类证据一致时记为「确认阻断」（confirmed）。异常≠一定被墙，也可能是网站临时故障。</div></details>
+    <details class="read-card"><summary>为什么某些国家显示「无测量数据」？</summary><div class="read-body">OONI 依赖当地志愿者跑探针。志愿者少、网络受限（探针本身被封）或该域名没人测过，都会导致没有记录。没有数据不代表没有封锁，也不代表有封锁。</div></details>
+    <details class="read-card"><summary>「疑似屏蔽」和「观测到异常」有什么区别？</summary><div class="read-body">本页把异常率 ≥ 25% 且样本量 ≥ 20 的国家标为「疑似屏蔽」——多次测量中大部分访问失败，指向系统性阻断；样本少或异常率低的只标「观测到异常」，可能是偶发故障或间歇性干扰。</div></details>
+    <details class="read-card"><summary>实时测试和历史观测不一致怎么办？</summary><div class="read-body">以历史观测为主、实时为辅：实时探针受当日网络波动、CDN 调度影响较大；但它能发现「最近刚发生」的封锁（观测数据有数小时到数天的滞后）。两者结合看更接近真相。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 封锁测试（观测数据：OONI Open Data · 实时探针：Globalping）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/censor.js?v=AUTO"></script>
+</body>
+</html>

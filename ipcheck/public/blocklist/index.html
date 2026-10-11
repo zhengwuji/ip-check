@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 黑名单检查 - NetProbe</title>
+<meta name="description" content="用几十个公开 DNS 黑名单（DNSBL）检查一个 IP：垃圾邮件记录、滥用记录、代理/VPN/Tor 标记与大网段参考名单，命中分三性质展示。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>IP 黑名单检查</h1>
+  <p class="desc">用一批公开黑名单（DNSBL）检查一个 IP。邮件服务器、论坛和各类网络服务在收到连接时通常会实时查询这些名单来决定是否放行；你的邮件被拒收、注册被拦、网站反复弹验证码，很可能就是因为 IP 出现在了其中某些名单上。每条命中分三种性质：<b>不良记录</b>（该地址有过滥发邮件、攻击或被入侵的记录）、<b>匿名标记</b>（已知代理/VPN/中继/Tor 出口，挂这类服务被标记是正常的）、<b>网段参考</b>（标记的是更大的地址段，而非这个地址本身）。命中是信号，不是定论。</p>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="ip" placeholder="要检查的 IP，留空 = 检查你的出口 IP" style="flex:1;min-width:220px" autocomplete="off">
+      <button class="btn" id="runBtn" style="min-width:130px">开始检查</button>
+    </div>
+    <span class="muted small" id="progressText" style="display:block;margin-top:8px"></span>
+    <div class="progress-line" id="progress"><i style="width:0%"></i></div>
+  </div>
+
+  <div class="card" id="summaryCard" style="margin-top:14px;display:none">
+    <p class="card-title">检查结论</p>
+    <div id="summary" class="muted small">检测中…</div>
+  </div>
+
+  <div class="card" id="resultCard" style="margin-top:14px;display:none">
+    <p class="card-title">名单明细</p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:640px">
+      <thead><tr><th style="min-width:230px">名单 (zone)</th><th style="width:110px">性质</th><th style="width:90px">结果</th><th>说明</th></tr></thead>
+      <tbody id="resBody"></tbody>
+    </table></div>
+    <p class="muted small" id="resNote" style="display:none;margin-top:8px"></p>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>我什么都没做过，为什么会在名单上？</summary><div class="read-body">共享出口和云服务器 IP 被成百上千人共用，只要有一个人发垃圾邮件或被入侵，整个地址都会被拉黑；家庭宽带动态地址段常被整段列入「动态池」名单。这些都不是针对你个人的记录。</div></details>
+    <details class="read-card"><summary>命中了不良记录，怎么移除？</summary><div class="read-body">多数名单提供移除（delist）页面，按提示提交即可，通常几分钟到几天生效；个别名单（如政策性名单）不接受申请，只能等它到期自动释放。被整段误伤时，可以向运营商申请更换出口 IP。</div></details>
+    <details class="read-card"><summary>什么是 DNSBL？为什么用 DNS 查询就能查黑名单？</summary><div class="read-body">DNSBL 把黑名单做成了 DNS 区块：把 IP 反转后拼上名单域名（如 1.2.3.4 → 4.3.2.1.zone.example），查询 A 记录，返回 127.0.0.x 即命中。这是邮件服务器时代沿用至今的轻量协议，不需要注册或 API 密钥。</div></details>
+    <details class="read-card"><summary>挂 VPN/代理被「匿名标记」要紧吗？</summary><div class="read-body">不要紧——这类名单记录的是「这个地址是公开代理/VPN/Tor 出口」这个事实，本身不代表滥用。很多网站拿它做风控信号：看到匿名标记就多弹一次验证码、要求再登录一次。关掉代理后这些拦截通常会消失。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · IP 黑名单检查（DNSBL 数据归属各名单维护方）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/blocklist.js?v=AUTO"></script>
+</body>
+</html>

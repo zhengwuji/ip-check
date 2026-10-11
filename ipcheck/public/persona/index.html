@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度画像检测 - NetProbe</title>
+<meta name="description" content="网站看到的你是谁？选择你想扮演的目标国家，本页用时区、语言、区域格式、文字系统等本机信号逐项对照打分，告诉你画像与「本地人」差在哪里。全部在浏览器本地计算。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>深度画像检测</h1>
+  <p class="desc">有一个经典的判断法：如果它长得像鸭子、游起来像鸭子、叫起来也像鸭子，那它多半就是鸭子。网站也是这样看你的——IP 可以声称你在 A 国，但时区、语言、区域格式、已装字体这些信号各自都在讲述自己的故事。本页测量你浏览器真实呈现的「身份画像」，与你希望被看作的目标国家做对照，并给出逐项差距与修正建议。全部计算在你的浏览器里完成，不上传任何数据。</p>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">1 · 选择目标身份</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:220px">
+        <div class="muted small" style="margin-bottom:4px">你想被看作哪国的本地人？</div>
+        <select class="input" id="targetCountry" style="width:100%"></select>
+      </div>
+      <button class="btn" id="runBtn" style="min-width:120px">开始检测</button>
+    </div>
+    <div class="muted small" style="margin-top:8px">本检测只读取你浏览器主动暴露给任何网站的标准信号（时区 / 语言 / 区域格式 / 字体），不读取 GPS、不读取摄像头、不发送任何数据。</div>
+  </div>
+
+  <div id="scoreArea"></div>
+  <div id="detailArea"></div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>网站到底会看哪些信号？</summary><div class="read-body">最常见的组合是：IP 归属地 + HTTP Accept-Language（语言偏好）+ 时区（JS 可读）+ Intl 区域格式（日期、数字的写法）+ 已安装字体覆盖的文字系统。风控严格的网站还会看键盘布局、屏幕分辨率与指针轨迹。</div></details>
+    <details class="read-card"><summary>IP 和时区不一致，会怎样？</summary><div class="read-body">这是最强的矛盾信号之一：IP 在美国但时区是 Asia/Shanghai，主流风控（Cloudflare、Stripe、各 AI 服务的反滥用系统）都会提高怀疑等级——因为普通旅行者的设备时区很少和 IP 差 8 小时以上。</div></details>
+    <details class="read-card"><summary>怎样让画像更接近目标国家？</summary><div class="read-body">按影响从大到小：① 让系统时区跟随代理出口（部分代理客户端支持时区伪装或用虚拟机设置）；② 把浏览器首选语言改为目标语言；③ 区域格式跟随语言；④ 语言对应的字体系统通常随系统语言预装，改语言后大多自动补齐。改完回来重新打分即可验证。</div></details>
+    <details class="read-card"><summary>这和「IP 评分」有什么不同？</summary><div class="read-body">IP 评分衡量的是「这个 IP 地址干不干净」（机房/滥用/代理库），画像检测衡量的是「你的设备像不像本地人」。两个都过关，网站才有较大概率把你当成真实本地用户。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 深度画像检测（纯本地计算）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/persona.js?v=AUTO"></script>
+</body>
+</html>

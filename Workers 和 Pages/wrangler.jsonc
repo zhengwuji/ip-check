@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "netprobe",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "TORRENT_DO", "class_name": "TorrentRoom" },
+      { "name": "COUNTERS_DO", "class_name": "Counters" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["TorrentRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["Counters"] }
+  ]
+}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公开 API 文档 - NetProbe</title>
+<meta name="description" content="NetProbe 公开 JSON API：GeoIP、风险分类、深度信息、IP 评分、Cloudflare 风险、IP 卡片 SVG。带速率限制，免费使用。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>公开 API 文档</h1>
+  <p class="desc">本站检测能力以只读 JSON/SVG 接口开放，免费、无需注册，按 IP 限速（重接口 12 次/分钟，轻接口 40 次/分钟）。请勿滥用，超出限制会收到 429。</p>
+
+  <div class="card">
+    <p class="card-title">通用说明</p>
+    <div class="kv-rows">
+      <div class="kv-row"><span class="k">Base URL</span><span class="v ip-text" id="baseUrl">—</span></div>
+      <div class="kv-row"><span class="k">格式</span><span class="v">JSON（UTF-8）/ SVG</span></div>
+      <div class="kv-row"><span class="k">鉴权</span><span class="v">无（限速按来源 IP 计）</span></div>
+      <div class="kv-row"><span class="k">错误</span><span class="v">502 上游失败 · 400 参数错误 · 429 超限</span></div>
+      <div class="kv-row"><span class="k">缓存</span><span class="v">服务端多层缓存（几分钟到几天不等）</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/session</p>
+    <p class="muted small" style="margin-top:-6px">当前访客的出口 IP 与 User-Agent。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/session
+→ {"ip":"1.2.3.4","ua":"Mozilla/5.0 ..."}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/geoip/{ip}</p>
+    <p class="muted small" style="margin-top:-6px">GeoIP 聚合（ip.sb → ipwho.is → ip-api 三源容错）。返回国家、城市、ASN、经纬度等。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/geoip/8.8.8.8
+→ {"ip":"8.8.8.8","country":"United States","city":"Mountain View","asn":15169,...}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/iprisk/{ip}</p>
+    <p class="muted small" style="margin-top:-6px">风险分类：机房/家庭宽带/教育网、代理与托管代理标记（ASN + 组织名启发式）。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/iprisk/8.8.8.8
+→ {"label":"机房IP (Hosting)","is_datacenter":true,"is_proxy":false,...}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/ipdeep/{ip}</p>
+    <p class="muted small" style="margin-top:-6px">深度信息：PTR 反解、常见端口扫描（带哨兵校验）、任播识别、ASN 注册日期。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/ipdeep/8.8.8.8
+→ {"ptr":"dns.google","openPorts":[53,80,443],"anycast":true,...}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/ipscore/{ip} <span class="badge">重接口</span></p>
+    <p class="muted small" style="margin-top:-6px">IP 评分全家桶：风险 + 深度 + ASN 增强 + DNSBL(3) + RPKI + 多源定位 + BGP 路由 + DNSBL(12) + 关联域名 + 网段样本 + ASN 邻居。单次可能 5-20 秒。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/ipscore/8.8.8.8
+→ {"risk":{...},"deep":{...},"asn":{...},"dnsbl":{...},"route":{...},...}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/ip/trend/{ip}</p>
+    <p class="muted small" style="margin-top:-6px">/24 网段近 14 天查询热度与本站估算纯净度均值。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/ip/trend/8.8.8.8
+→ {"subnet":"8.8.8.0/24","series":[{"date":"10/01","n":3,"purity":88},...],"level":"冷门"}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/cfrisk/{ip}</p>
+    <p class="muted small" style="margin-top:-6px">Cloudflare 环境风险评估：七类高置信信号 + 0-100 等效风险指数。支持 IPv4 / IPv6。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/cfrisk/2606:4700:4700::1111
+→ {"score":10,"band":"环境干净","signals":{...},"geo":{...}}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/card.svg</p>
+    <p class="muted small" style="margin-top:-6px">IP 信息卡片 SVG。不传 ip 时渲染"当前访客"的 IP；参数 style（12 种风格）、sticker、w（宽度 120-1440）。</p>
+    <pre class="code-box">&lt;img src="http://&lt;host&gt;/api/card.svg?style=sunset&amp;sticker=rainbow&amp;w=480"&gt;
+<!-- 每位访客看到自己的 IP --></pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">POST /api/report · GET /api/report/{id}</p>
+    <p class="muted small" style="margin-top:-6px">保存检测快照并获取分享短链。POST 字段：ip（必填）、label、score、purity、asn、org、cc、city、region、rpki、dnsblHit、ttl（有效秒数，3600-2592000，默认 7 天，最长 30 天）。</p>
+    <pre class="code-box">curl -X POST http://&lt;host&gt;/api/report -H "Content-Type: application/json" \
+  -d '{"ip":"8.8.8.8","label":"机房IP (Hosting)","purity":"90","cc":"us","ttl":86400}'
+→ {"ok":true,"id":"1sJODm","url":"/report/1sJODm"}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/doh?u=</p>
+    <p class="muted small" style="margin-top:-6px">DoH JSON 代查代理：仅允许白名单内的公共 DNS 端点（Google/Cloudflare/AliDNS/DNSPod/Quad9/AdGuard 等），供「DNS 解析对比」等服务商侧视角查询使用。</p>
+    <pre class="code-box">curl "http://&lt;host&gt;/api/doh?u=https%3A%2F%2Fdoh.pub%2Fdns-query%3Fname%3Dgithub.com%26type%3DA"</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/status/history · GET /api/health</p>
+    <p class="muted small" style="margin-top:-6px">服务状态巡检历史（服务端每 5 分钟巡检 20 个官方状态页）；health 返回运行时长、缓存条数、内存与数据文件大小。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/health
+→ {"ok":true,"uptime_s":3600,"caches":[{"name":"geoip","entries":123},...],...}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/whois?q=</p>
+    <p class="muted small" style="margin-top:-6px">RDAP 代理：域名 / IP / AS 号均可查（IANA 引导自动路由到对应注册局）。</p>
+    <pre class="code-box">curl "http://&lt;host&gt;/api/whois?q=example.com"</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">POST /api/egress/geo</p>
+    <p class="muted small" style="margin-top:-6px">分流出口检测配套：批量补齐出口 IP 归属地。POST JSON {"ips":["1.1.1.1",...]}（最多 24 个，仅公网 IPv4/IPv6）。</p>
+    <pre class="code-box">curl -X POST http://&lt;host&gt;/api/egress/geo -H "Content-Type: application/json" \
+  -d '{"ips":["8.8.8.8","1.1.1.1"]}'
+→ {"ok":true,"geo":{"8.8.8.8":{"country":"United States",...}}}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/tlsinfo</p>
+    <p class="muted small" style="margin-top:-6px">本次连接的 TLS 握手指纹（ClientHello 摘要）。Workers 版返回 TLS 版本、密码套件、ClientHello 长度与扩展列表摘要（按运行时可用性）。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/tlsinfo
+→ {"tlsVersion":"TLSv1.3","tlsCipher":"AES_128_GCM","helloLength":517,
+   "extensionsSha1":"0eaddb…","available":true}</pre>
+  </div>
+
+  <div class="card">
+    <p class="card-title">GET /api/stats</p>
+    <p class="muted small" style="margin-top:-6px">全站查询计数（geoip / ipscore 等查询接口命中即 +1）：今日查询次数与历史累计。Workers 版由 Durable Object 持久化。</p>
+    <pre class="code-box">curl http://&lt;host&gt;/api/stats
+→ {"today":103864,"total":18092706}</pre>
+  </div>
+
+  <h2 class="guide-h2" style="margin-top:20px">常见问题</h2>
+  <details class="read-card"><summary>什么是原生 IP，什么是广播 IP？</summary><div class="read-body">原生 IP 指 IP 的归属国与运营商（ASN）的注册国一致，通常意味着在这个国家注册、在这个国家使用；广播 IP 指运营商把注册在 A 国的地址段公告到 B 国使用，比如香港机房广播美国地址。原生 IP 在流媒体与支付风控里通常更受信任，IP 评分页的「IP 原生性」一栏就是按这个逻辑判断的。</div></details>
+  <details class="read-card"><summary>机房 IP 和住宅 IP 有什么区别？</summary><div class="read-body">住宅 IP（ISP）由宽带运营商分配给家庭用户，使用行为最接近真人，风控信任度最高；机房 IP（Hosting/Datacenter）由数据中心持有，常被 VPS、代理与爬虫批量使用，容易被重点风控。评分页通过 ASN 自报类型（isp / hosting）结合运营商库判断。</div></details>
+  <details class="read-card"><summary>为什么不同网站的 IP 归属地不一样？</summary><div class="read-body">各家 GeoIP 数据库的采集方式不同：有的靠基础设施测量，有的靠用户上报，有的靠注册数据，更新时间也不一致。同一 IP 的城市归属出现几十公里偏移属正常现象，评分页的多源对比会列出各来源的经纬度与最大偏移，供你交叉判断。</div></details>
+  <details class="read-card"><summary>DNS 泄露是什么，为什么重要？</summary><div class="read-body">你访问任何域名前都要先做 DNS 解析。如果解析请求从本地网络明文发出，本地运营商（或网络审查者）就能看到你访问了哪些域名，即使你的网页流量走了代理。用「DNS泄露」页面的唯一子域名检测，可以验证解析是否真的在代理端完成。</div></details>
+  <details class="read-card"><summary>浏览器指纹为什么能唯一识别我？</summary><div class="read-body">Canvas/WebGL 渲染结果、已装字体、音频栈输出、硬件核心数等几十项特征组合在一起，构成一个几乎唯一的设备标识，不需要 Cookie 也不会因清缓存而消失。「指纹检测」页面在本地计算这套指纹并展示每个组成部分。</div></details>
+  <details class="read-card"><summary>分数为 0 或查询失败是什么情况？</summary><div class="read-body">多为上游数据源临时不可达、目标网络屏蔽了本站服务器所在网段，或查询的是内网/保留地址。等几分钟重试一般即可恢复；分流出口检测里某个目标「不可达」通常说明代理规则没有放行该站点。</div></details>
+
+  <footer class="site-footer">NetProbe · 公开 API · 仅供研究与个人工具使用，请自行承担合规责任</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script>
+  document.getElementById("baseUrl").textContent = location.origin;
+  document.querySelectorAll(".code-box").forEach(function (pre) {
+    pre.title = "点击复制";
+    pre.addEventListener("click", function () {
+      navigator.clipboard.writeText(pre.textContent).then(function () {
+        pre.classList.add("copied");
+        setTimeout(function () { pre.classList.remove("copied"); }, 800);
+      });
+    });
+  });
+</script>
+</body>
+</html>

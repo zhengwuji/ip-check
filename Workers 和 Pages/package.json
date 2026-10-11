@@ -1,0 +1,17 @@
+{
+  "name": "netprobe-workers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "node scripts/prepare.js",
+    "dev": "node scripts/prepare.js && node dev-server.mjs",
+    "deploy": "node scripts/prepare.js && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261006.1": true
+  }
+}

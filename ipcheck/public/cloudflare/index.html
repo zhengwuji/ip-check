@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare 节点检测 - 环境风险与人机验证 - NetProbe</title>
+<meta name="description" content="检测你访问 Cloudflare 命中的边缘节点、出口 IP、WARP 与协议，评估当前网络在 Cloudflare 风控下的风险指数，实测 Turnstile 人机验证，并横向对比免费版、企业版、WARP 等不同等级网络的节点与延迟。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__npTurnstileReady" async></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>Cloudflare 节点检测 · 环境风险与边缘延迟对比</h1>
+  <p class="desc">检测你访问 Cloudflare 时命中的边缘节点、出口 IP、WARP 与连接协议，评估当前网络在 Cloudflare 风控下的风险指数，实测 Turnstile 人机验证能否无感通过，并横向对比免费版、企业版、WARP 等不同等级网络的节点与延迟。</p>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:-6px">
+    <label class="toggle" title="开启后隐藏 IP 中段"><span class="toggle-label">隐藏IP</span><input type="checkbox" id="ipMaskToggle"><span class="slider"></span></label>
+  </div>
+
+  <div class="exit-grid">
+    <div class="exit-card"><div class="exit-label">☁ CLOUDFLARE 出口IP</div><div class="exit-ip ip-text" id="cf-ip">检测中…</div><div class="exit-geo" id="cf-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">🛰 命中的 CLOUDFLARE 边缘节点</div><div class="exit-ip" id="cf-colo">—</div><div class="exit-geo" id="cf-colo-geo"></div></div>
+    <div class="exit-card"><div class="exit-label">🧦 WARP 与连接协议</div><div class="exit-ip" id="cf-warp">—</div><div class="exit-geo" id="cf-proto"></div></div>
+  </div>
+
+  <div class="duo-grid">
+    <div class="card">
+      <p class="card-title">Turnstile 非交互模式 <span class="badge">Non-interactive</span>
+        <button class="btn btn-ghost small ts-reset" data-mode="ni" style="margin-left:auto">重置</button></p>
+      <p class="muted small" style="margin-top:-6px">后台静默校验，不需要任何点击</p>
+      <div class="ts-box" style="min-height:66px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:10px;margin:8px 0"><div id="ts-ni"></div></div>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">当前状态</span><span class="v" id="ts-ni-status"><span class="pill pill-muted">等待加载</span></span></div>
+        <div class="kv-row"><span class="k">服务端验证</span><span class="v" id="ts-ni-server"><span class="pill pill-muted">—</span></span></div>
+        <div class="kv-row"><span class="k">响应耗时</span><span class="v" id="ts-ni-ms">—</span></div>
+      </div>
+      <div id="ts-ni-verdict"></div>
+      <details class="ts-token"><summary>响应元数据</summary><pre class="token-pre" id="ts-ni-token">尚未取得 token</pre></details>
+    </div>
+    <div class="card">
+      <p class="card-title">Turnstile 托管模式 <span class="badge">Managed</span>
+        <button class="btn btn-ghost small ts-reset" data-mode="mg" style="margin-left:auto">重置</button></p>
+      <p class="muted small" style="margin-top:-6px">由 Cloudflare 决定是否要求你点击确认</p>
+      <div class="ts-box" style="min-height:66px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:10px;margin:8px 0"><div id="ts-mg"></div></div>
+      <div class="kv-rows">
+        <div class="kv-row"><span class="k">当前状态</span><span class="v" id="ts-mg-status"><span class="pill pill-muted">等待加载</span></span></div>
+        <div class="kv-row"><span class="k">服务端验证</span><span class="v" id="ts-mg-server"><span class="pill pill-muted">—</span></span></div>
+        <div class="kv-row"><span class="k">响应耗时</span><span class="v" id="ts-mg-ms">—</span></div>
+      </div>
+      <div id="ts-mg-verdict"></div>
+      <details class="ts-token"><summary>响应元数据</summary><pre class="token-pre" id="ts-mg-token">尚未取得 token</pre></details>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">Google reCAPTCHA v3 验证测试 <span class="badge">补充测试</span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-ghost small" id="rcReset">重置</button>
+        <button class="btn small" id="rcStart">开始校验</button>
+      </span></p>
+    <p class="muted small" style="margin-top:-6px">无感背景评分（0.0-1.0），Google 依据浏览器指纹、网络信誉与历史行为给出可信分数，不需要任何点击。使用官方公开测试密钥演示完整链路；大陆网络可能加载不到 Google 组件，加载失败本身也是一种网络环境信号。</p>
+    <div class="kv-rows">
+      <div class="kv-row"><span class="k">当前状态</span><span class="v" id="rcStatus"><span class="pill pill-muted">等待触发</span></span></div>
+      <div class="kv-row"><span class="k">可信分数</span><span class="v" id="rcScore">—</span></div>
+      <div class="kv-row"><span class="k">服务端验证</span><span class="v" id="rcServer"><span class="pill pill-muted">—</span></span></div>
+    </div>
+    <div id="rcVerdict" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">Cloudflare 不同网络等级的节点与延迟对比
+      <button class="btn btn-ghost small" id="gradeRerun" style="margin-left:auto">重新测试</button></p>
+    <p class="muted small" style="margin-top:-6px">同一条线路访问免费套餐、企业网络、WARP、测速网络等不同的 Cloudflare 网络，对比各自命中的节点与延迟</p>
+    <div style="overflow-x:auto">
+      <table class="grade-table">
+        <thead><tr><th>站点 / 网络</th><th>等级</th><th>命中节点</th><th>延迟</th><th>协议</th></tr></thead>
+        <tbody id="gradeBody"><tr><td colspan="5" class="muted small">测试中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="grade-conclusion" id="gradeConclusion"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">Cloudflare 边缘节点测速
+      <button class="btn small" id="speedStart" style="margin-left:auto">开始测速</button></p>
+    <p class="muted small" style="margin-top:-6px">浏览器直连 speed.cloudflare.com 分段实测：下载最多 300 MB、上传最多 50 MB，跑够时长自动停止；同时读取边缘往返时延</p>
+    <div class="speed-boxes">
+      <div class="speed-box"><div class="sb-label">下载</div><div class="sb-num" id="spdDl">—</div><div class="sb-unit">Mbps</div></div>
+      <div class="speed-box"><div class="sb-label">上传</div><div class="sb-num" id="spdUl">—</div><div class="sb-unit">Mbps</div></div>
+      <div class="speed-box"><div class="sb-label">边缘 RTT</div><div class="sb-num" id="spdRtt">—</div><div class="sb-unit">ms · 边缘往返</div></div>
+    </div>
+    <div class="progress-line" id="speedProgress" style="margin-bottom:8px"><i style="width:0%"></i></div>
+    <p class="muted small" style="margin-bottom:0">点击「开始测速」才会消耗流量，最多约 350 MB（速度越快用得越多，百兆线路通常 150 到 300 MB）。结果反映你到最近 Cloudflare 节点的链路质量，不代表网站回源速度；手机流量用户请留意。</p>
+  </div>
+
+  <div class="cf-risk">
+    <div class="cf-risk-head">
+      <div>
+        <p class="cf-risk-title">Cloudflare 环境风险评估</p>
+        <p class="cf-risk-sub">综合 Cloudflare 连接特征与多源 IP 情报，评估当前出口 IP 在 Cloudflare 风控下的风险</p>
+      </div>
+      <button class="btn small cf-risk-refresh" id="riskRefresh">刷新</button>
+    </div>
+    <div class="cf-risk-body">
+      <div class="cf-risk-top">
+        <div>
+          <div class="muted small" style="margin-bottom:4px">检测对象 · 出口 IP</div>
+          <div class="cf-risk-ip ip-text" id="riskIp">检测中…</div>
+        </div>
+        <div id="riskScore"><span class="pill pill-muted">评估中…</span></div>
+      </div>
+      <div class="cf-risk-grid">
+        <div>
+          <h4 class="cf-h4">地理位置定位</h4>
+          <div class="cf-geo-box" id="riskGeo"><span class="muted small">等待风险数据…</span></div>
+        </div>
+        <div>
+          <h4 class="cf-h4">风险用途检测</h4>
+          <div class="cf-sig-list" id="riskSignals"><div class="muted small">等待风险数据…</div></div>
+          <p class="muted small" style="margin:8px 0 0;text-align:right">仅开放高置信度信号，检测到基本不会误判；未检测到不代表绝对安全</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="trio-grid" style="margin-top:14px">
+    <div class="card">
+      <p class="card-title">CLOUDFLARE 连接详情</p>
+      <div class="kv-rows" id="detailRows"><div class="muted small">检测中…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title">CLOUDFLARE 网络画像</p>
+      <div class="kv-rows" id="profileRows"><div class="muted small">检测中…</div></div>
+    </div>
+    <div class="card">
+      <p class="card-title" style="display:block">节点历史记录
+        <button class="btn btn-ghost small" id="histClear" style="float:right">清除</button></p>
+      <p class="muted small" style="margin-top:-6px">仅保存在浏览器本地，本站不记录</p>
+      <div id="histList" class="hist-list"><div class="muted small">暂无记录</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 class="guide-h2">Cloudflare 节点检测能看出什么</h2>
+    <p>全球有相当大比例的网站都架在 Cloudflare 前面。你打开这类网站时，请求并不会直达网站服务器，而是先落到 Cloudflare 离你网络最近的边缘数据中心（内部称 colo），再由它回源。命中哪个节点，直接影响打开速度、视频是否卡顿，也影响部分服务把你识别为哪个地区的用户。本页向 Cloudflare 的 cdn-cgi/trace 接口发一次请求，把返回的节点代码、出口 IP、WARP 状态与协议版本翻译成可读的结论。</p>
+    <h3 class="guide-h3">风险指数怎么算</h3>
+    <p>Cloudflare 企业版 Bot Management 的机器人分数并不对外公开，本页给出的风险指数是本站的等效评估：以出口 IP 在公开黑名单中的记录为基础，叠加公开代理、住宅代理、企业代理、VPN、Tor、机房 IP、滥用记录七类高置信信号，并结合 WARP 等连接特征综合计算。数值越小越好，60 以上通常意味着访问 Cloudflare 站点时更容易遇到人机验证或拦截。更细的评分依据可以打开 <a href="/ip/">IP 评分页</a> 查看。</p>
+    <h3 class="guide-h3">人机验证结果怎么看</h3>
+    <ul class="guide-list">
+      <li>无感自动通过：Turnstile 不需要任何操作就完成校验，说明 Cloudflare 对当前浏览器与网络信任度高，是最理想的结果。</li>
+      <li>需要点击验证：托管模式弹出「确认你是人类」勾选框，点一下即可通过。环境整体正常，但存在少量可疑特征。</li>
+      <li>无法通过：即使点击也校验失败，通常是浏览器指纹异常、自动化特征明显或 IP 信誉较差，访问很多站点会反复遇到验证码。</li>
+    </ul>
+    <h3 class="guide-h3">三种常见的异常场景</h3>
+    <ul class="guide-list">
+      <li>人在亚洲，节点在美国：免费版 Cloudflare 站点从中国大陆或部分东南亚线路出发时，常被调度到 LAX、SJC 这类远端节点，延迟从几十毫秒涨到两百毫秒以上。对比表里「免费版」与「企业版」两行命中不同节点，就是这种情况。</li>
+      <li>出口 IP 与首页不一致：说明你的代理或分流规则对 Cloudflare 流量做了单独处理。可以配合<a href="/">首页的分流测试</a>核对规则是否按预期生效。</li>
+      <li>WARP 显示已开启：出口 IP 会变成 Cloudflare 自己的地址（AS13335）。这类 IP 在 <a href="/gpt/">ChatGPT</a>、<a href="/claude/">Claude</a> 等服务的风控里评分偏低，注册和登录更容易被拦。</li>
+    </ul>
+    <h3 class="guide-h3">Cloudflare 主要边缘节点代码速查</h3>
+    <p class="chips-line">亚太地区常见：<span class="chip chip-flat">HKG 香港</span><span class="chip chip-flat">NRT 东京</span><span class="chip chip-flat">KIX 大阪</span><span class="chip chip-flat">SIN 新加坡</span><span class="chip chip-flat">ICN 首尔</span><span class="chip chip-flat">TPE 台北</span><span class="chip chip-flat">KHH 高雄</span><span class="chip chip-flat">MFM 澳门</span><span class="chip chip-flat">MNL 马尼拉</span><span class="chip chip-flat">KUL 吉隆坡</span><span class="chip chip-flat">BKK 曼谷</span><span class="chip chip-flat">CGK 雅加达</span><span class="chip chip-flat">SGN 胡志明市</span><span class="chip chip-flat">BOM 孟买</span><span class="chip chip-flat">SYD 悉尼</span></p>
+    <p class="chips-line">北美与欧洲常见：<span class="chip chip-flat">LAX 洛杉矶</span><span class="chip chip-flat">SJC 圣何塞</span><span class="chip chip-flat">SEA 西雅图</span><span class="chip chip-flat">DFW 达拉斯</span><span class="chip chip-flat">ORD 芝加哥</span><span class="chip chip-flat">IAD 华盛顿</span><span class="chip chip-flat">EWR 纽瓦克</span><span class="chip chip-flat">YVR 温哥华</span><span class="chip chip-flat">LHR 伦敦</span><span class="chip chip-flat">FRA 法兰克福</span><span class="chip chip-flat">AMS 阿姆斯特丹</span><span class="chip chip-flat">CDG 巴黎</span><span class="chip chip-flat">MAD 马德里</span><span class="chip chip-flat">ARN 斯德哥尔摩</span><span class="chip chip-flat">DME 莫斯科</span></p>
+    <p class="muted small">节点代码沿用当地机场的三字母代码。Cloudflare 在全球一百多个国家和地区运营数百个数据中心，本页内置完整对照表，任何代码都会翻译成对应城市。</p>
+  </div>
+
+  <h2 class="guide-h2" style="margin-top:18px">常见问题</h2>
+  <details class="read-card"><summary>什么是 Cloudflare 边缘节点（colo）？</summary><div class="read-body">Cloudflare 把服务器部署在全球各地的数据中心里，每个位置用当地机场的三字母代码标识，比如 HKG 是香港、NRT 是东京、LAX 是洛杉矶。你访问任何接入 Cloudflare 的网站，请求都会先落到离你网络最近的那个节点，再由它回源到网站服务器。本页读取 cdn-cgi/trace 返回的节点代码，并翻译成城市和国家。</div></details>
+  <details class="read-card"><summary>为什么免费版和企业版网站命中的 Cloudflare 节点不一样？</summary><div class="read-body">Cloudflare 会按套餐使用不同的调度策略。免费与 Pro 套餐的流量在某些地区（尤其是从中国大陆和部分东南亚线路出发时）可能被调度到更远的节点；企业级网络与 Cloudflare 自家服务（如 1.1.1.1、speed.cloudflare.com）则更倾向命中就近节点。本页把同一条线路下不同等级站点的命中结果并排展示，有没有差异一比就知道。</div></details>
+  <details class="read-card"><summary>Cloudflare 出口 IP 和普通出口 IP 有什么区别？</summary><div class="read-body">普通出口 IP 是你直连网站时对方看到的地址；Cloudflare 出口 IP 是你访问接入 Cloudflare 的网站时，Cloudflare 边缘记录到的来源地址。当代理或分流规则对 Cloudflare 流量做了特殊处理时，两者会不一样。配合首页的分流测试与本页的出口 IP，可以确认规则是否真的生效。</div></details>
+  <details class="read-card"><summary>WARP 是什么？warp=on 和 warp=plus 是什么意思？</summary><div class="read-body">WARP 是 Cloudflare 提供的加密隧道服务，开启后流量会先进入 Cloudflare 网络再发往目标网站。trace 结果里 warp=off 表示未使用；warp=on 表示免费版 WARP；warp=plus 表示 WARP+ 付费版。开启后出口 IP 会变成 Cloudflare 的地址（AS13335），不少网站对这类地址执行更严格的风控。</div></details>
+  <details class="read-card"><summary>延迟多少算正常？</summary><div class="read-body">命中同城或同区域节点时，浏览器到 Cloudflare 边缘的往返通常在 5 到 60 毫秒；跨海到美国西海岸大约 120 到 200 毫秒；超过 300 毫秒多半是绕路或被调度到了远端。本页延迟是浏览器发起完整请求的耗时，会略高于纯网络往返，更适合用来横向对比不同等级网络。</div></details>
+  <details class="read-card"><summary>HTTP/3 和 TLS 1.3 显示未启用怎么办？</summary><div class="read-body">HTTP/3 基于 QUIC（UDP 443），浏览器通常要在第二次访问同一站点后才切换过去；如果始终停在 HTTP/2，可能是代理或防火墙没有放行 UDP 443。TLS 1.3 是当前主流版本，现代浏览器默认支持；如果显示 TLS 1.2，往往说明链路上有代理在做降级或审计。</div></details>
+  <details class="read-card"><summary>Turnstile 无感通过和需要点击有什么区别？</summary><div class="read-body">Turnstile 是 Cloudflare 的人机验证组件。非交互模式全程在后台完成；托管模式由 Cloudflare 根据浏览器指纹、网络信誉与行为特征决定是否弹出勾选框。无感通过代表 Cloudflare 高度信任当前环境；需要点击说明存在少量可疑特征；点击后仍失败则风险较高，日常上网会频繁遇到验证。本页取得的 token 还会提交到本站服务器做 siteverify 二次校验，显示 PASS 才算完整走通流程。</div></details>
+  <details class="read-card"><summary>这个页面会记录我的 IP 吗？</summary><div class="read-body">不会。所有检测均由你的浏览器直接向 Cloudflare 的接口发起，节点历史只写入你自己浏览器的本地存储，清除按钮一键可删；本站服务器不保存任何查询记录。</div></details>
+
+  <h3 class="guide-h3" style="margin-top:18px">相关工具</h3>
+  <div class="tool-links">
+    <a href="/">IP 查询 · 网站分流测试：核对 Cloudflare 流量是否走了预期出口</a>
+    <a href="/ip/">IP 评分查询：出口 IP 的纯净度、ASN 与风险明细</a>
+    <a href="/ping/">全球 Ping 延迟测试：从 20 多个节点实测任意 IP 的延迟</a>
+    <a href="/link/">全球网络连通性测试：常用站点一键连通检测</a>
+    <a href="/gpt/">ChatGPT 风险检测：出口 IP 的纯净度与信任评分</a>
+    <a href="/claude/">Claude AI IP 检测：当前出口 IP 能否稳定使用 Claude</a>
+  </div>
+
+  <footer class="site-footer">NetProbe · Cloudflare 检测 · Turnstile 使用官方公开测试密钥，仅用于环境验证演示</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/cloudflare.js?v=AUTO"></script>
+</body>
+</html>

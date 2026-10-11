@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 对比 - 两个 IP 全维度并排对比 - NetProbe</title>
+<meta name="description" content="输入两个 IP 并排对比：出口类型、纯净度、ASN、归属地、RPKI、黑名单命中、七类风险信号，一屏看清换节点前后的差异。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>IP 对比 <span class="muted" style="font-size:0.55em;font-weight:600">换节点前后一比就知道</span></h1>
+  <p class="desc">把两个出口 IP 的检测数据并排摆放：类型、纯净度、ASN、位置、RPKI、黑名单、风险信号。换代理节点前先测 A，换完测 B，差异一目了然。</p>
+
+  <div class="card">
+    <div class="cmp-inputs">
+      <div class="cmp-input-block">
+        <label class="muted small" for="ipA">IP A（默认本机出口）</label>
+        <input class="input" id="ipA" placeholder="例如 1.2.3.4" autocomplete="off">
+      </div>
+      <div class="cmp-vs">VS</div>
+      <div class="cmp-input-block">
+        <label class="muted small" for="ipB">IP B</label>
+        <input class="input" id="ipB" placeholder="例如 8.8.8.8" autocomplete="off">
+      </div>
+      <button class="btn" id="cmpGo">开始对比</button>
+    </div>
+    <p class="muted small" id="cmpHint" style="margin:8px 0 0">两个都留空则对比「本机出口 vs 8.8.8.8」示例。</p>
+  </div>
+
+  <div id="cmpResult" style="display:none">
+    <div class="duo-grid" style="margin-top:14px">
+      <div class="exit-card"><div class="exit-label">IP A</div><div class="exit-ip" id="headA">—</div><div class="exit-geo" id="headSubA"></div></div>
+      <div class="exit-card"><div class="exit-label">IP B</div><div class="exit-ip" id="headB">—</div><div class="exit-geo" id="headSubB"></div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <p class="card-title">全维度对比</p>
+      <div style="overflow-x:auto">
+        <table class="grade-table cmp-table">
+          <thead><tr><th>维度</th><th>IP A</th><th>IP B</th><th>结论</th></tr></thead>
+          <tbody id="cmpRows"><tr><td colspan="4" class="muted small">检测中…（重接口约 5-20 秒）</td></tr></tbody>
+        </table>
+      </div>
+      <div class="grade-conclusion" id="cmpVerdict"></div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <label class="toggle" style="margin:0"><span class="toggle-label small">遮盖 IP 尾段</span><input type="checkbox" id="cmpMask"><span class="slider"></span></label>
+        <select class="input" id="cmpTtl" style="width:auto;padding:4px 8px;font-size:0.8em"><option value="86400">1 天有效</option><option value="259200">3 天有效</option><option value="604800" selected>7 天有效</option></select>
+        <button class="btn btn-ghost small" id="cmpShare">🔗 生成分享报告</button>
+        <a class="btn btn-ghost small" id="cmpLinkA" href="#" style="display:none;text-decoration:none">查看 A 评分详情 →</a>
+        <a class="btn btn-ghost small" id="cmpLinkB" href="#" style="display:none;text-decoration:none">查看 B 评分详情 →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 class="guide-h2" style="margin-top:0">对比模式怎么用</h2>
+    <ul class="guide-list">
+      <li><b>换节点前后对比</b>：先在 A 填当前节点 IP，切换代理后再在 B 填新节点 IP，看纯净度与风险信号变化。</li>
+      <li><b>原生 IP vs 中转 IP</b>：把疑似原生的 IP 和机场中转 IP 各测一次，类型、ASN 归属、机房标签的差异会非常直观。</li>
+      <li><b>分流规则验证</b>：分别测「直连出口」与「代理出口」，确认规则把流量分到了预期线路。</li>
+    </ul>
+    <p class="muted small" style="margin-bottom:0">对比仅读取两个 IP 的静态画像，不做实时互通性测试；想测连通质量请用「全球 Ping」与「网络连通」页。</p>
+  </div>
+
+  <footer class="site-footer">NetProbe · IP 对比 · 数据与 /ip/ 评分页同源</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/compare.js?v=AUTO"></script>
+</body>
+</html>

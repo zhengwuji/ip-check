@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 评分查询 - ASN / 风险检测 - NetProbe</title>
+<meta name="description" content="查询任意 IP 或本机出口 IP：运营商类型（家宽/机房）、人机流量占比、多源经纬度比对、反向解析、端口、滥用黑名单、RPKI、网段热度与全球延迟。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+<link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css">
+<script src="/assets/vendor/leaflet/leaflet.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+    <div>
+      <h1 style="margin-bottom:0" id="pageTitle">IP 评分查询</h1>
+      <p class="desc" style="margin-bottom:0">IP 深度查询：家宽 or 机房、人机流量、多源经纬度比对、端口、滥用、黑名单、全球延迟一屏掌握</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;min-width:320px;flex:1;max-width:420px">
+      <form id="form" style="display:flex;gap:10px">
+        <input class="input" id="ipInput" placeholder="输入 IP，如 8.8.8.8" autocomplete="off" style="flex:1">
+        <button class="btn btn-ghost mic-btn" type="button" id="micBtn" title="语音输入 IP（Chrome/Edge）" style="display:none;padding:0 12px">🎙</button>
+        <button class="btn" type="submit">查询</button>
+      </form>
+      <label class="toggle" style="align-self:flex-end" title="开启后隐藏 IP 中段">
+        <span class="toggle-label">隐藏IP</span>
+        <input type="checkbox" id="ipMaskToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div id="resultArea">
+    <div class="card muted small" style="margin-top:18px">输入 IP 或留空查询本机出口；也可以从主页的出口 IP 点击进入。</div>
+  </div>
+
+  <footer class="site-footer">NetProbe · IP 评分查询</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/ip.js?v=AUTO"></script>
+</body>
+</html>

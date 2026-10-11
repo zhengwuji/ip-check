@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网速测试 - NetProbe</title>
+<meta name="description" content="基于 Cloudflare 边缘网络的免费测速：下载 / 上传 / 延迟 / 抖动四项指标，包大小可选，全程在你的浏览器与最近的 Cloudflare 节点之间完成。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>网速测试</h1>
+  <p class="desc">测速在你的浏览器与距离你最近的 Cloudflare 边缘节点之间进行：先测往返延迟与抖动，再按你选择的包大小进行 4 轮下载与 4 轮上传。注意测速会消耗真实流量，套餐流量紧张时请选小包。</p>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">测速参数</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <div class="muted small" style="margin-bottom:4px">下载包大小</div>
+        <select class="input" id="dlSize">
+          <option value="10485760">10 MB</option>
+          <option value="26214400" selected>25 MB</option>
+          <option value="52428800">50 MB</option>
+          <option value="104857600">100 MB</option>
+        </select>
+      </div>
+      <div>
+        <div class="muted small" style="margin-bottom:4px">上传包大小</div>
+        <select class="input" id="ulSize">
+          <option value="2621440">2.5 MB</option>
+          <option value="5242880">5 MB</option>
+          <option value="10485760" selected>10 MB</option>
+          <option value="26214400">25 MB</option>
+        </select>
+      </div>
+      <button class="btn" id="startBtn" style="min-width:120px">开始测速</button>
+      <button class="btn btn-ghost" id="stopBtn" style="min-width:90px;display:none">停止</button>
+    </div>
+    <span class="muted small" id="phaseText" style="display:block;margin-top:8px">点击「开始测速」，大约需要 20-60 秒（视带宽而定）</span>
+    <div class="progress-line" id="progress" style="margin-top:8px"><i style="width:0%"></i></div>
+  </div>
+
+  <div class="card" id="edgeCard" style="margin-top:14px;display:none">
+    <p class="card-title">测速节点</p>
+    <div class="kv-grid" id="edgeInfo"></div>
+  </div>
+
+  <div class="card" id="resultCard" style="margin-top:14px;display:none">
+    <p class="card-title">测速结果</p>
+    <div class="speed-grid">
+      <div class="speed-cell"><div class="speed-label">下载</div><div class="speed-val" id="vDl">—</div><div class="muted small">Mbps</div></div>
+      <div class="speed-cell"><div class="speed-label">上传</div><div class="speed-val" id="vUl">—</div><div class="muted small">Mbps</div></div>
+      <div class="speed-cell"><div class="speed-label">延迟</div><div class="speed-val" id="vPing">—</div><div class="muted small">ms</div></div>
+      <div class="speed-cell"><div class="speed-label">抖动</div><div class="speed-val" id="vJit">—</div><div class="muted small">ms</div></div>
+    </div>
+    <div id="verdictArea" style="margin-top:10px"></div>
+    <div class="tbl-wrap" style="margin-top:10px">
+      <table class="tbl" style="min-width:520px">
+        <thead><tr><th>轮次</th><th>下载 (Mbps)</th><th>上传 (Mbps)</th></tr></thead>
+        <tbody id="roundBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>测速结果比宽带套餐低很多，正常吗？</summary><div class="read-body">常见原因：Wi-Fi 信号差或连接的是 2.4G 频段、代理/VPN 链路限速、运营商忙时拥塞、以及测速节点不在同一区域。测速只反映「你到 Cloudflare 边缘」的带宽，访问其它网站时路径不同，速度也会不同。</div></details>
+    <details class="read-card"><summary>为什么用 Cloudflare 做测速节点？</summary><div class="read-body">Cloudflare 在全球 300 多个城市部署了边缘节点，绝大多数用户都能连到非常近的节点，且支持大文件下行与上行回传，测出的延迟更接近真实链路质量。它并非在每个国家都有节点，结果仅供参考。</div></details>
+    <details class="read-card"><summary>延迟和抖动分别是什么？</summary><div class="read-body">延迟是数据包往返一次的耗时，影响网页打开、游戏、语音的即时响应；抖动是多次延迟之间的波动程度，抖动越大，视频通话和实时游戏越容易卡顿。一般延迟 &lt; 50ms、抖动 &lt; 5ms 属于优秀。</div></details>
+    <details class="read-card"><summary>挂代理时测速，测的是谁的带宽？</summary><div class="read-body">测的是「你 → 代理 → Cloudflare」整条链路的带宽。想验证代理节点速度就开着代理测，想验证宽带本身请关掉代理再测，两次结果对比还能看出代理的开销。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 网速测试（数据经 Cloudflare 边缘网络）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/speed.js?v=AUTO"></script>
+</body>
+</html>

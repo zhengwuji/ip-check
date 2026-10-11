@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球 Ping 测试 - NetProbe</title>
+<meta name="description" content="从全球多个节点检测任意目标 IP/域名的网络延迟（最小/平均/最大）；也可测量本机到各大 Anycast 网络的 RTT。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>全球 Ping 测试</h1>
+  <p class="desc">模式一：从全球分布式节点对目标 IP/域名发起 ICMP Ping，显示各节点最小/平均/最大延迟。模式二：测量你的浏览器到各大 Anycast 网络边缘的往返延迟。</p>
+
+  <div class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="target" placeholder="目标 IP 或域名（默认 = 你的出口 IP）" style="flex:1;min-width:220px" autocomplete="off">
+      <button class="btn" id="nodeBtn">全球节点 Ping</button>
+      <button class="btn btn-ghost" id="rttBtn">本机延迟测试</button>
+      <button class="btn btn-ghost" id="gpBtn">Globalping 探针</button>
+      <button class="btn btn-ghost" id="mtrBtn">路由追踪</button>
+    </div>
+    <span class="muted small" id="progressText" style="display:block;margin-top:8px"></span>
+    <div class="progress-line" id="progress"><i style="width:0%"></i></div>
+    <p class="muted small" style="margin:6px 0 0">「全球节点 Ping」依赖公共检测网络（check-host.net），「Globalping 探针 / 路由追踪」依赖 Globalping 开放探针网络（匿名限额较低，适合备用与路由追踪）；受限时请使用本机延迟测试。</p>
+  </div>
+
+  <div id="nodeArea"></div>
+
+  <div id="rttArea" style="display:none">
+    <div class="card" style="padding-bottom:8px">
+      <label class="toggle">
+        <span class="toggle-label">显示逐轮数据</span>
+        <input type="checkbox" id="showRounds">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl" style="min-width:680px">
+        <thead><tr><th>网络</th><th style="width:100px">中位延迟</th><th id="roundsHead" style="display:none">逐轮 (ms)</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="site-footer">NetProbe · 全球 Ping 测试</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/ping.js?v=AUTO"></script>
+</body>
+</html>

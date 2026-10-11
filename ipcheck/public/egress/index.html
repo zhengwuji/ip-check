@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分流出口检测 - 站点级出口 IP - NetProbe</title>
+<meta name="description" content="逐一对常用站点发起浏览器直连请求，读取每个站点实际看到的出口 IP，验证代理分流规则是否按预期生效；附带 DNS 与 WebRTC 出口对照与出口分布地图。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+<link rel="stylesheet" href="/assets/vendor/leaflet/leaflet.css">
+<script src="/assets/vendor/leaflet/leaflet.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+    <h1 style="margin-bottom:0">分流出口检测</h1>
+    <label class="toggle" title="开启后隐藏 IP 中段">
+      <span class="toggle-label">隐藏IP</span>
+      <input type="checkbox" id="ipMaskToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="desc">逐一对常用站点发起浏览器直连请求，读取每个站点实际看到的你的出口 IP，验证代理分流规则是否真的按预期生效；同时对照 DNS 与 WebRTC 出口，并在地图上画出所有出口的位置。</p>
+
+  <div class="card">
+    <p class="card-title">检测目标（11 个站点 + DNS / WebRTC 出口）
+      <button class="btn small" id="startBtn" style="margin-left:auto">开始检测</button></p>
+    <p class="muted small" style="margin-top:-6px">请求全部由你的浏览器直接发往各目标站点的公开回显接口（如 <code>cdn-cgi/trace</code>），本站服务器不参与转发，也拿不到这些结果；归属地信息由本站批量补齐。</p>
+    <div class="progress-line" id="progress" style="margin-top:10px"><i style="width:0%"></i></div>
+    <p class="muted small" id="progressText" style="margin:6px 0 0">点击「开始检测」后约 10 秒完成；同一站点重复检测结果可能因出口切换而不同。</p>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;margin-top:14px">
+    <p class="card-title">检测结果 <span class="muted small" id="distinctInfo" style="margin-left:auto"></span></p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:660px">
+      <thead><tr><th>目标</th><th>分类</th><th>出口 IP</th><th>归属地</th><th>耗时</th></tr></thead>
+      <tbody id="egBody"></tbody>
+    </table></div>
+    <div id="egVerdict" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card" id="mapCard" style="display:none;margin-top:14px">
+    <p class="card-title">出口分布地图 <span class="muted small" style="margin-left:auto">同一位置聚合显示，点击查看使用了该出口的站点</span></p>
+    <div id="mapWrap"><div id="egMap" style="height:300px;border-radius:10px"></div></div>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>为什么要做分流出口检测？</summary><div class="read-body">代理客户端的分流规则决定了「哪个网站走哪条线路」。规则写完并不等于生效：可能被域名列表更新覆盖，也可能被通配规则抢先匹配。逐一读取每个站点实际看到的出口 IP，是验证规则是否生效最直接的办法——比如 claude.ai 应走美国专线、国内站点应直连，一看便知。</div></details>
+    <details class="read-card"><summary>检测原理是什么？</summary><div class="read-body">你的浏览器直接向每个目标站点发起一次只读请求，目标站点在响应里回显它看到的来源地址（Cloudflare 系站点为公开的 cdn-cgi/trace 接口，允许任何网页跨域读取）。因为请求由浏览器发出，它经过的代理链路与正常访问完全一致，看到的就是真实分流结果。DNS 出口通过唯一子域名让本机解析一次来探测；WebRTC 出口通过 STUN 获取 UDP 映射地址。</div></details>
+    <details class="read-card"><summary>为什么没有国内网站？</summary><div class="read-body">国内站点没有开放跨域读取的 IP 回显接口，浏览器拿到响应也无法读取内容，所以本页暂不含国内目标。想验证国内直连，可以用「网络连通」页面的国内站点延迟测试，或对比 api.ipify.org（直连参考）与其他目标的差异。</div></details>
+    <details class="read-card"><summary>所有出口都一样是正常的吗？</summary><div class="read-body">分两种情况：如果你只用全局代理，所有站点出口一致是正常的；如果你配置了分流规则，所有站点仍然同一个出口，说明规则没有命中——常见原因是客户端没有开启对应模式、订阅里没有对应域名列表，或规则被更靠前的通配条目拦截。</div></details>
+    <details class="read-card"><summary>DNS 出口和站点出口不一致说明什么？</summary><div class="read-body">站点出口是 HTTP/HTTPS 流量的走向，DNS 出口是域名解析请求的走向。两者可以合法地不同（比如开启 fake-IP 后解析由代理端完成）；但如果 DNS 出口显示为你本机宽带运营商的地址，而站点出口是代理，说明 DNS 在本地明文解析，存在 DNS 泄露，可到「DNS泄露」页面做深度检测。</div></details>
+    <details class="read-card"><summary>本页会记录我的 IP 吗？</summary><div class="read-body">探测请求由你的浏览器直接发往目标站点，本站服务器无法感知；唯一的本站请求是批量归属地查询，只包含待查询的 IP 列表，不与你的会话关联保存。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · 分流出口检测</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/egress.js?v=AUTO"></script>
+</body>
+</html>

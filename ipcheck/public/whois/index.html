@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whois 查询 - 域名 / IP / ASN - NetProbe</title>
+<meta name="description" content="基于 RDAP 协议的 Whois 查询：域名注册信息、IP 网段、ASN 注册信息一键查询。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>Whois 查询</h1>
+  <p class="desc">通过 RDAP 协议查询域名注册信息、IP 网段归属与 ASN 注册信息。支持域名（example.com）、IP（1.1.1.1）和 ASN（AS13335）。</p>
+
+  <div class="card">
+    <form id="form" style="display:flex;gap:10px;flex-wrap:wrap">
+      <input class="input" id="q" placeholder="如 google.com、8.8.8.8、2606:4700::1111 或 AS15169" style="flex:1;min-width:240px" autocomplete="off">
+      <button class="btn" type="submit" style="min-width:96px">查询</button>
+    </form>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" class="small muted">
+      示例：
+      <a class="split-ip-cell" href="#q=qq.com">qq.com</a>
+      <a class="split-ip-cell" href="#q=x.ai">x.ai</a>
+      <a class="split-ip-cell" href="#q=1.1.1.1">1.1.1.1</a>
+      <a class="split-ip-cell" href="#q=AS15169">AS15169</a>
+    </div>
+  </div>
+
+  <div id="resultArea"></div>
+
+  <p class="read-section-title">🌐 支持的域名后缀</p>
+  <div class="duo-grid" id="tldStats">
+    <div class="card"><div class="muted small"><span class="spin"></span> 正在加载 IANA 根区统计…</div></div>
+  </div>
+  <div id="tldStatsNote" class="muted small" style="margin-top:-4px"></div>
+  <div class="card">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input class="input" id="tldSearch" placeholder="搜索后缀，如 co" style="max-width:260px" autocomplete="off">
+      <span class="muted small" id="tldShown"></span>
+    </div>
+    <div id="tldList" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto"></div>
+  </div>
+
+  <p class="read-section-title">📖 关于 WHOIS 查询</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>WHOIS 和 RDAP 有什么区别？</summary><div class="read-body">WHOIS 是沿用至今的明文查询协议；RDAP 是新一代注册数据协议，返回结构化 JSON、支持标准化错误码与分页。本站优先直连各注册局官方 RDAP 接口，未提供 RDAP 的后缀自动回退到传统 WHOIS，两条通道互为备份。</div></details>
+    <details class="read-card"><summary>为什么有些域名看不到注册人信息？</summary><div class="read-body">受 GDPR 等隐私法规影响，多数注册局和注册商对个人注册信息做了隐私保护（Redacted for privacy），仅保留注册商、日期、DNS、状态等技术字段，这是正常现象，不代表域名有问题。</div></details>
+    <details class="read-card"><summary>域名状态代码是什么意思？</summary><div class="read-body">clientTransferProhibited 是注册商转移锁（正常保护）；serverDeleteProhibited 是注册局删除锁；clientHold 表示暂停解析（异常）；pendingDelete 表示等待删除、即将掉出根区。结果里的状态徽章会给出说明，红色代表需要留意。</div></details>
+    <details class="read-card"><summary>数据来自哪里？多久更新？</summary><div class="read-body">域名数据实时直连各注册局（Verisign、CNNIC、DENIC 等）官方 RDAP 接口；IP 与 ASN 数据来自五大区域互联网注册机构（ARIN / RIPE / APNIC / LACNIC / AFRINIC）发布的注册数据。注册信息本身随注册局数据库实时更新。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · Whois 查询（RDAP）</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/whois.js?v=AUTO"></script>
+</body>
+</html>

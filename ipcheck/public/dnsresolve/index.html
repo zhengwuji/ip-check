@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS 解析对比 - NetProbe</title>
+<meta name="description" content="同时向全球多家公共 DNS 服务商解析同一个域名，覆盖本机直查与服务器代查两种通道，对比各家返回结果是否一致。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>DNS 解析对比</h1>
+  <p class="desc">同时向全球知名公共 DNS 服务商解析同一个域名并对比结果。不同服务商或不同地区的答案出现差异，通常意味着 CDN 在做就近调度、某处缓存尚未刷新，或者这条记录在链路上被过滤、重定向了。标注「本机直查」的行为你的浏览器直接发起，可反映你本机的解析路径；「服务器代查」行由本站服务器发起，反映服务器侧视角。</p>
+
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <select class="input" id="rtype" style="width:100px">
+        <option value="A" selected>A</option>
+        <option value="AAAA">AAAA</option>
+        <option value="CNAME">CNAME</option>
+        <option value="NS">NS</option>
+        <option value="MX">MX</option>
+        <option value="TXT">TXT</option>
+      </select>
+      <input class="input" id="domain" placeholder="域名，例如 github.com" style="flex:1;min-width:200px" autocomplete="off">
+      <button class="btn" id="runBtn" style="min-width:110px">开始解析</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px" id="regionBar"></div>
+    <span class="muted small" id="progressText" style="display:block;margin-top:8px"></span>
+  </div>
+
+  <div class="card" id="resultCard" style="margin-top:14px;display:none">
+    <p class="card-title">解析结果 <span class="badge" id="consistency"></span></p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width:640px">
+      <thead><tr><th style="min-width:170px">DNS 服务商</th><th>解析结果</th><th style="width:80px">TTL</th><th style="width:96px">通道</th></tr></thead>
+      <tbody id="resBody"></tbody>
+    </table></div>
+    <p class="muted small" id="note" style="display:none">注：「服务器代查」由本站服务器向该服务商发起查询，代查出口与你的本机不同；如果你需要判断本机 DNS 路径，请以「本机直查」行为准。</p>
+  </div>
+
+  <p class="read-section-title">📖 拓展阅读</p>
+  <div class="read-grid">
+    <details class="read-card"><summary>各家结果不一致，说明被劫持了吗？</summary><div class="read-body">不一定。大型网站用智能 CDN，不同位置的解析器会拿到不同的就近节点 IP，这属于正常调度；被污染的典型特征是：所有主流服务商都返回真实答案，唯独某个结果雷同于一个完全无关的 IP（常见于被墙域名），或返回了大量保留地址。</div></details>
+    <details class="read-card"><summary>DoH 与传统 UDP 查询有什么区别？</summary><div class="read-body">传统 DNS 是明文 UDP，中间设备能看到并篡改查询；DoH 把查询装进 HTTPS（443 端口），链路上只能看到「你在和某个解析器通信」，看不到查了什么。本页直查/代查全部走 DoH。</div></details>
+    <details class="read-card"><summary>为什么有的服务商查询很慢或失败？</summary><div class="read-body">部分服务商对某些地区或数据中心的查询做了限速/拒绝（例如把公共云出口识别为滥用来源），另外跨域策略要求本机直查的服务商必须显式开放 CORS。失败行不代表服务商不可用，只代表这条查询路径不通。</div></details>
+    <details class="read-card"><summary>TTL 是什么？为什么每次查到的不一样？</summary><div class="read-body">TTL 是记录允许被缓存的秒数。解析器缓存未过期时会把缓存答案直接返回（TTL 递减），所以同一域名在不同服务商、不同时间查到的 TTL 与 IP 都可能不同。TTL 很短（如 60s）通常意味着该域名做了快速切换或故障转移。</div></details>
+  </div>
+
+  <footer class="site-footer">NetProbe · DNS 解析对比</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/geo.js?v=AUTO"></script>
+<script src="/assets/js/dnsresolve.js?v=AUTO"></script>
+</body>
+</html>

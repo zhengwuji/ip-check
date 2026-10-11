@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络连通性测试 - NetProbe</title>
+<meta name="description" content="一键测试当前网络到全球各大知名网站的实时连通性与延迟数据，判断分流规则是否生效、线路是否通畅。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>网络连通性测试</h1>
+  <p class="desc">一键测试当前网络到全球各大知名网站的实时连通性与延迟数据。用来判断分流规则是否生效、线路是否通畅。</p>
+
+  <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 18px">
+    <button class="btn" id="startBtn"><span id="startLabel">测试中…</span></button>
+    <div class="muted small" style="margin-left:auto;display:flex;gap:14px;flex-wrap:wrap">
+      <span><span class="dot-good" style="display:inline-block;width:9px;height:9px;border-radius:3px"></span> 优 &lt;150ms</span>
+      <span><span class="dot-warn" style="display:inline-block;width:9px;height:9px;border-radius:3px"></span> 良 &lt;400ms</span>
+      <span><span class="dot-bad" style="display:inline-block;width:9px;height:9px;border-radius:3px"></span> 慢 &lt;1500ms</span>
+      <span><span class="dot-fail" style="display:inline-block;width:9px;height:9px;border-radius:3px"></span> 超时</span>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">添加自定义测试目标</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="input" id="cName" placeholder="名称，例如 我的NAS" style="width:160px" autocomplete="off">
+      <input class="input" id="cUrl" placeholder="域名或完整 URL，例如 home.example.com" style="flex:1;min-width:220px" autocomplete="off">
+      <button class="btn btn-ghost" id="cAdd">添加</button>
+    </div>
+    <p class="muted small" style="margin:6px 0 0">自定义目标保存在本机浏览器，通过站点图标请求测得延迟；填域名即可，也可填完整 URL。点击卡片右上角 ✕ 可移除。</p>
+  </div>
+
+  <footer class="site-footer">NetProbe · 网络连通性测试</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/link.js?v=AUTO"></script>
+</body>
+</html>

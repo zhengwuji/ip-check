@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 信息卡片 - 在线生成器 - NetProbe</title>
+<meta name="description" content="生成可嵌入博客、论坛签名、GitHub README 的 IP 信息卡片。每位访客打开时都会看到自己的 IP、归属地、ASN 与网络类型，动态 SVG 渲染，支持多种风格与贴纸。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/css/site.css?v=AUTO">
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<div class="container">
+  <h1>IP 信息卡片 <span class="muted" style="font-size:0.55em;font-weight:600">在线生成器</span></h1>
+  <p class="desc">把你的 IP 装进一张可分享的卡片：选择风格与贴纸，复制嵌入代码贴到博客、论坛签名或 README。每个访客看到的是他们自己的 IP，动态 SVG 渲染，矢量清晰。</p>
+
+  <div class="card">
+    <p class="card-title">选择风格</p>
+    <div class="chips" id="styleChips"></div>
+    <p class="card-title" style="margin-top:14px">选择贴纸</p>
+    <div class="chips" id="stickerChips"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn" id="btnRandom">🎲 随机组合风格+贴纸</button>
+      <button class="btn btn-ghost" id="btnCopyIp">📋 复制当前 IP</button>
+      <button class="btn btn-ghost" id="btnRefresh">🔄 重新获取我的 IP</button>
+      <span class="muted small" id="curLabel" style="align-self:center"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">实时预览 <span class="muted small" style="font-weight:400">嵌入网页后的真实效果（这张图就是 SVG 接口本身）</span></p>
+    <div class="card-preview"><img id="cardImg" alt="IP 信息卡片预览"></div>
+    <div id="cardMeta" class="muted small" style="margin-top:8px"></div>
+  </div>
+
+  <div class="cf-risk" style="margin-top:14px">
+    <div class="cf-risk-head">
+      <div>
+        <p class="cf-risk-title">分享本页给朋友</p>
+        <p class="cf-risk-sub">打开链接的人会带着你选好的风格与贴纸，看到他们自己的 IP 卡片</p>
+      </div>
+    </div>
+    <div class="cf-risk-body">
+      <div class="share-url" id="shareUrl">…</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">嵌入代码 <button class="btn btn-ghost small" id="btnMoreFmt" style="margin-left:auto">获取更多格式代码 →</button></p>
+    <div id="basicFmt">
+      <p class="fmt-label">MARKDOWN 格式 <span class="muted small" style="font-weight:400">支持 GitHub / Hexo / Notion / 多数论坛</span></p>
+      <pre class="code-box" id="fmtMd" title="点击复制"></pre>
+    </div>
+    <div id="moreFmt" style="display:none">
+      <p class="fmt-label" style="margin-top:14px">宽度</p>
+      <div class="chips" id="widthChips"></div>
+      <p class="fmt-label" style="margin-top:14px">HTML · 博客 / 独立网站</p>
+      <pre class="code-box" id="fmtHtml" title="点击复制"></pre>
+      <p class="fmt-label" style="margin-top:12px">Markdown · GitHub / Hexo / Notion</p>
+      <pre class="code-box" id="fmtMd2" title="点击复制"></pre>
+      <p class="fmt-label" style="margin-top:12px">BBCode · Discuz / phpBB / 老论坛</p>
+      <pre class="code-box" id="fmtBb" title="点击复制"></pre>
+      <p class="muted small" style="margin:10px 0 0">点击任意代码框即可一键复制。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="card-title">所有风格预览 <span class="muted small" style="font-weight:400">示例 IP 1.2.3.4 · 点击任意卡片直接选用该风格</span></p>
+    <div class="style-wall" id="styleWall"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2 class="guide-h2" style="margin-top:0">什么是 IP 信息卡片？</h2>
+    <p>IP 信息卡片是一张可以嵌到任何网页里的动态 SVG 图片。访客打开页面的那一刻，服务器实时识别<b>他们自己的</b>出口 IP，并渲染出 IP 地址、国家/城市、ASN 归属与网络类型，还可以标注纯净度评分。</p>
+    <p>它不是一张静态截图——把生成的 Markdown / HTML / BBCode 代码贴到博客、论坛签名或 GitHub README 之后，每一位看到的访客都会渲染出各自的 IP。同一张卡片服务所有人，无需登录，永久免费。</p>
+    <div class="ip-promo">
+      <a href="/ip/" class="ip-promo-link"><b>查询我的 IP 评分 →</b><span class="muted small" style="display:block">纯净度 · 风险画像 · 黑名单 · 风险命中</span></a>
+    </div>
+  </div>
+
+  <footer class="site-footer">NetProbe · IP 信息卡片 · 卡片由服务器实时渲染，不存储访客查询记录</footer>
+</div>
+<script src="/assets/js/common.js?v=AUTO"></script>
+<script src="/assets/js/card.js?v=AUTO"></script>
+</body>
+</html>
