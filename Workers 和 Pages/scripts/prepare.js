@@ -12,8 +12,38 @@ const srcPublic = path.join(root, "..", "ipcheck", "public");
 const dstPublic = path.join(root, "public");
 
 // 1) 复制（排除 sw/manifest? 不排除，全部照搬）
-fs.rmSync(dstPublic, { recursive: true, force: true });
-fs.cpSync(srcPublic, dstPublic, { recursive: true });
+//
+// 注意：这里刻意不用 fs.rmSync / fs.cpSync。
+// 在 Windows + Node 24 上，当路径中出现「CJK 字符紧跟空格」时
+// （本项目目录名即 `Workers 和 Pages`），rmSync / cpSync 会在原生层
+// 直接快速失败，进程以 exit code -1073740791（0xC0000409
+// STATUS_STACK_BUFFER_OVERRUN）终止且没有任何输出，而 unlinkSync /
+// rmdirSync / copyFileSync 等基础调用在同一路径下工作正常。
+// 因此改用仅依赖基础 API 的等价实现，保证脚本可移植。
+function rmrf(p) {
+  let st;
+  try { st = fs.lstatSync(p); } catch (e) { return; }
+  if (st.isDirectory()) {
+    for (const n of fs.readdirSync(p)) rmrf(path.join(p, n));
+    fs.rmdirSync(p);
+  } else {
+    fs.unlinkSync(p);
+  }
+}
+
+function cprf(src, dst) {
+  const st = fs.statSync(src);
+  if (st.isDirectory()) {
+    fs.mkdirSync(dst, { recursive: true });
+    for (const n of fs.readdirSync(src)) cprf(path.join(src, n), path.join(dst, n));
+  } else {
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(src, dst);
+  }
+}
+
+rmrf(dstPublic);
+cprf(srcPublic, dstPublic);
 
 // 2) 资源版本 hash：基于 assets/ 与 favicon 的路径+大小+mtime
 function walkHash(dir, acc) {
