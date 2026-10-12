@@ -7,7 +7,8 @@
   "use strict";
   var esc = NP.esc;
 
-  // Cloudflare 官方文档公开的 Turnstile 测试密钥（仅用于环境验证演示）
+  // Cloudflare 官方文档公开发布的 Turnstile 测试 sitekey（仅用于演示链路，非私密凭据）
+  // 参考：https://developers.cloudflare.com/turnstile/troubleshooting/testing/
   var TS_KEYS = {
     ni: "1x00000000000000000000BB", // 非交互：总是通过
     mg: "3x00000000000000000000FF", // 托管：强制交互式挑战
@@ -480,8 +481,8 @@
     renderHistory();
   });
 
-  /* ---------------- reCAPTCHA v3 补充测试（官方公开测试密钥，演示链路） ---------------- */
-  var RC_SITE = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+  /* ---------------- reCAPTCHA v3 补充测试（Google 官方公开测试 sitekey，演示链路，非私密凭据） ---------------- */
+  var RC_SITE = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google 官方 reCAPTCHA v3 测试 sitekey
   function rcPill(text, cls) { return "<span class='pill " + cls + "'>" + esc(text) + "</span>"; }
   function rcLoad() {
     return new Promise(function (resolve, reject) {

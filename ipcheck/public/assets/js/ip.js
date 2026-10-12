@@ -309,6 +309,222 @@
     setTimeout(function () { map.invalidateSize(); }, 200);
   }
 
+  /* ================= ISP 家宽判定 ================= */
+  function ispGradeCls(g) {
+    if (g === "residential") return "pill-good";
+    if (g === "access") return "pill-info";
+    if (g === "mobile") return "pill-info";
+    if (g === "datacenter") return "pill-warn";
+    return "pill-muted";
+  }
+
+  async function loadIsp(ip) {
+    var box = document.getElementById("ispBox");
+    if (!box) return;
+    var d;
+    try {
+      var r = await fetch("/api/isp/" + encodeURIComponent(ip), { signal: AbortSignal.timeout(20000) });
+      d = r.ok ? await r.json() : null;
+    } catch (e) { d = null; }
+    if (!d || d.error) {
+      box.innerHTML = "<div class='muted small'>家宽判定暂不可用" + (d && d.error ? "：" + esc(String(d.error)) : "") + "</div>";
+      return;
+    }
+
+    var conf = Number(d.confidence) || 0;
+    var confCls = conf >= 70 ? "var(--good)" : conf >= 45 ? "var(--warn)" : "var(--muted)";
+    var html = "";
+
+    /* 结论横幅 */
+    html += "<div class='isp-verdict'>" +
+      "<div class='isp-verdict-main'>" +
+      "<span class='isp-answer " + (d.isResidential ? "is-home" : "is-not") + "'>" +
+      (d.isResidential ? "✓ 是" : d.grade === "unknown" ? "? 无法确定" : "✗ 不是") + "</span>" +
+      "<span class='isp-grade'>" + pill(d.label || "未知", ispGradeCls(d.grade)) + "</span>" +
+      "</div>" +
+      "<div class='isp-conf'>" +
+      "<span class='muted small'>判定置信度</span>" +
+      "<div class='isp-conf-bar'><i style='width:" + conf + "%;background:" + confCls + "'></i></div>" +
+      "<b style='color:" + confCls + "'>" + conf + "%</b>" +
+      "</div></div>";
+
+    html += "<p class='muted small' style='margin:10px 0 12px'>" + esc(d.note || "") + "</p>";
+
+    /* 信号明细 */
+    var sig = (d.signals || []).filter(function (s) { return s.hit; });
+    if (sig.length) {
+      html += "<div class='isp-sig-list'>";
+      sig.forEach(function (s) {
+        var cls = s.w > 0 ? "sig-pos" : s.w < 0 ? "sig-neg" : "sig-zero";
+        var mark = s.w > 0 ? "+" + s.w : s.w === 0 ? "0" : String(s.w);
+        html += "<div class='isp-sig " + cls + "'><span class='isp-sig-w'>" + mark + "</span>" +
+          "<span class='isp-sig-t'>" + esc(s.text) + "</span></div>";
+      });
+      html += "</div>";
+    }
+
+    /* 基础字段 */
+    var kv = "";
+    kv += row("运营商", esc(d.isp || d.org || "未知"));
+    kv += row("ASN", d.asn ? "<b>AS" + d.asn + "</b> " + esc(d.asname || "") : "<span class='muted small'>未知</span>");
+    if (d.peeringdb) {
+      var pt = d.peeringdb.infoTypes && d.peeringdb.infoTypes.length
+        ? d.peeringdb.infoTypes.join(" / ") : (d.peeringdb.infoType || "未自报");
+      kv += row("PeeringDB 自报", "<b>" + esc(pt) + "</b>" +
+        (d.peeringdb.name ? " <span class='muted small'>" + esc(d.peeringdb.name) + "</span>" : ""));
+      if (d.peeringdb.traffic || d.peeringdb.scope) {
+        kv += row("网络规模", esc([d.peeringdb.traffic, d.peeringdb.scope].filter(Boolean).join(" · ")));
+      }
+    } else {
+      kv += row("PeeringDB 自报", "<span class='muted small'>未收录</span>");
+    }
+    kv += row("反向 DNS", d.ptr ? "<span class='mono small'>" + esc(d.ptr) + "</span>" : "<span class='muted small'>无记录</span>");
+    html += "<div class='kv-rows' style='margin-top:12px'>" + kv + "</div>";
+
+    html += "<p class='muted small' style='margin:10px 0 0'>" + esc(d.disclaimer || "") + "</p>";
+
+    box.innerHTML = html;
+  }
+
+  /* ================= 中转站路径 ================= */
+  function transitNodeRow(n) {
+    return "<div class='tr-node'>" +
+      "<span class='tr-node-flag'>" + NP.flag(n.cc) + "</span>" +
+      "<span class='tr-node-name'>" + esc(n.city || n.country || n.node) + "</span>" +
+      "<span class='muted small'>" + esc(n.country || "") + (n.asn ? " · AS" + n.asn : "") + "</span>" +
+      "</div>";
+  }
+
+  function transitPathHtml(n) {
+    var hops = (n.hops || []).filter(function (h) { return h.ip; });
+    if (!hops.length) return "<div class='muted small' style='padding:6px 0'>该探测点未返回可用跳</div>";
+    var parts = hops.map(function (h) {
+      var cls = h.isTarget ? "tr-hop-target" : h.private ? "tr-hop-private" : "tr-hop";
+      var label = h.ip;
+      var title = [h.asname ? "AS" + (h.asn || "?") + " " + h.asname : "", h.city || "", h.rtt != null ? h.rtt + " ms" : ""].filter(Boolean).join(" · ");
+      return "<span class='tr-hop " + cls + "' title='" + esc(title) + "'>" +
+        (h.private ? "内网" : esc(label)) + "</span>";
+    });
+    return "<div class='tr-path'>" + parts.join("<i class='tr-arrow'>→</i>") + "</div>";
+  }
+
+  function renderTransit(d) {
+    var box = document.getElementById("transitBox");
+    if (!box) return;
+    var sm = d.summary || {};
+    var html = "";
+
+    html += "<div class='tr-stats'>" +
+      "<span><b>" + (sm.probes || 0) + "</b> 探测点</span>" +
+      "<span><b>" + (sm.publicHops || 0) + "</b> 公网中转站</span>" +
+      "<span><b>" + (sm.uniqueAsn || 0) + "</b> 中转 ASN</span>" +
+      "<span><b>" + (sm.distinctIps || 0) + "</b> 不同 IP</span>" +
+      (d.complete === false ? "<span class='muted small'>（部分探测点超时，结果可能不全）</span>" : "") +
+      "</div>";
+
+    /* 中转 ASN 汇总 */
+    if (d.asnGroups && d.asnGroups.length) {
+      html += "<p class='card-title' style='margin:14px 0 8px'>途经中转网络（ASN）</p><div class='tr-asn-grid'>";
+      d.asnGroups.slice(0, 14).forEach(function (g) {
+        var cls = g.hosting ? "tr-asn-dc" : "tr-asn-isp";
+        html += "<div class='tr-asn " + cls + "'>" +
+          "<div class='tr-asn-head'><b>AS" + (g.asn || "?") + "</b>" +
+          "<span class='pill " + (g.hosting ? "pill-warn" : "pill-good") + "'>" + (g.hosting ? "机房" : "网络") + "</span></div>" +
+          "<div class='tr-asn-name'>" + esc(g.name || "未知网络") + "</div>" +
+          "<div class='muted small'>" + (g.ips ? g.ips.length : 0) + " 个 IP · " + g.hops + " 次出现</div>" +
+          "</div>";
+      });
+      html += "</div>";
+    }
+
+    /* 中转站 IP 列表 */
+    if (d.stations && d.stations.length) {
+      html += "<p class='card-title' style='margin:16px 0 8px'>中转站 IP" +
+        "<span class='muted small'>按路径中出现次数排序</span></p><div class='tr-station-list'>";
+      d.stations.slice(0, 24).forEach(function (s) {
+        var tags = [];
+        if (s.hosting) tags.push("<span class='pill pill-warn'>机房</span>");
+        if (s.asn) tags.push("<span class='pill pill-muted'>AS" + s.asn + "</span>");
+        html += "<div class='tr-station'>" +
+          "<span class='tr-station-ip mono'>" + esc(s.ip) + "</span>" +
+          "<span class='tr-station-org muted small'>" + esc([s.asname || s.org, s.city, s.country].filter(Boolean).join(" · ") || "未知") + "</span>" +
+          "<span class='tr-station-meta'>" + tags.join("") +
+          (s.rttMin != null ? "<span class='muted small'>" + s.rttMin + " ms</span>" : "") +
+          (s.hopsSeen > 1 ? "<span class='muted small'>×" + s.hopsSeen + "</span>" : "") + "</span>" +
+          "</div>";
+      });
+      html += "</div>";
+    }
+
+    /* 各探测点完整路径 */
+    if (d.nodes && d.nodes.length) {
+      html += "<p class='card-title' style='margin:16px 0 8px'>各探测点实测路径</p><div class='tr-nodes'>";
+      d.nodes.forEach(function (n) {
+        html += "<div class='tr-node-block'>" + transitNodeRow(n) + transitPathHtml(n) + "</div>";
+      });
+      html += "</div>";
+    }
+
+    /* AS 级 BGP 链路 */
+    if (d.asnChain && d.asnChain.upstreams && d.asnChain.upstreams.length) {
+      html += "<p class='card-title' style='margin:16px 0 8px'>AS 级 BGP 上游链路" +
+        "<span class='muted small'>" + esc(d.asnChain.prefix || "") + " · " + (d.asnChain.paths || 0) + " 条观测</span></p><div class='chips'>";
+      d.asnChain.upstreams.slice(0, 12).forEach(function (u) {
+        html += "<span class='pill pill-muted' title='" + esc(u.name || "") + "'>AS" + u.asn + " · " + u.share + "%</span>";
+      });
+      html += "</div>";
+    }
+
+    html += "<p class='muted small' style='margin:12px 0 0'>" + esc(d.disclaimer || "") +
+      (d.source ? "<br>数据源：" + esc(d.source) : "") + "</p>";
+
+    box.innerHTML = html;
+  }
+
+  async function loadTransit(ip) {
+    var box = document.getElementById("transitBox");
+    if (!box) return;
+    var id = null;
+    try {
+      var r = await fetch("/api/transit/start/" + encodeURIComponent(ip) + "?nodes=6", { signal: AbortSignal.timeout(15000) });
+      var s = r.ok ? await r.json() : null;
+      if (!s || s.error || !s.request_id) {
+        box.innerHTML = "<div class='muted small'>路径追踪暂不可用" +
+          (s && s.error ? "：" + esc(String(s.error)) : "") + "</div>";
+        return;
+      }
+      id = s.request_id;
+      var src = s.source || "";
+      var nProbe = (s.nodes && s.nodes.length) || s.probes || 0;
+      box.innerHTML = "<div class='v'><span class='spin'></span> 已向 " + nProbe +
+        " 个全球探测点发起追踪，等待路径返回…</div>";
+    } catch (e) {
+      box.innerHTML = "<div class='muted small'>路径追踪请求失败：" + esc(String(e && e.message || e)) + "</div>";
+      return;
+    }
+
+    /* 轮询：Globalping 约 6-10 秒完成，check-host 边探测边返回约 20 秒收齐。
+       result 请求带上目标 IP 与数据源，供 Workers 多 isolate 场景做无状态回退。 */
+    var qs = "?ip=" + encodeURIComponent(ip) + (src === "check-host.net" ? "&src=ch" : "");
+    for (var i = 0; i < 16; i++) {
+      await new Promise(function (z) { setTimeout(z, 2500); });
+      var d = null;
+      try {
+        var rr = await fetch("/api/transit/result/" + encodeURIComponent(id) + qs, { signal: AbortSignal.timeout(12000) });
+        d = rr.ok ? await rr.json() : null;
+      } catch (e) { d = null; }
+      if (!d) continue;
+      if (d.error) {
+        box.innerHTML = "<div class='muted small'>路径追踪已过期或失败。</div>";
+        return;
+      }
+      if (d.pending) continue;
+      renderTransit(d);
+      return;
+    }
+    box.innerHTML = "<div class='muted small'>路径追踪超时，请稍后重试。</div>";
+  }
+
   async function lookup(ip) {
     var area = document.getElementById("resultArea");
     document.getElementById("pageTitle").textContent = "IP 评分查询";
@@ -397,6 +613,11 @@
       row("企业信息", esc((asn && asn.org) || risk.org || "未知")) +
       "</div></div>";
     html += "</div>";
+
+    /* —— ISP 家宽判定（异步加载） —— */
+    html += "<div class='card' style='margin-top:14px' id='ispCard'><p class='card-title'>ISP 家宽判定" +
+      "<span class='muted small'>PeeringDB 自报类型 · ip-api 机房标志 · 反向 DNS 命名习惯</span></p>" +
+      "<div id='ispBox'><div class='v'><span class='spin'></span> 判定中…</div></div></div>";
 
     /* —— 三列：技术指标 | IP 情报 | 风险深度检测 —— */
     var portsHtml;
@@ -545,6 +766,11 @@
         "<p class='muted small' style='margin:6px 0 0'>基于公开 BGP 观测路径（RIPE RIS 路由采集器）统计；连线粗细 = 路径占比，蓝框 = Tier 1 骨干。</p></div>";
     }
 
+    /* —— 中转站路径（异步加载） —— */
+    html += "<div class='card' style='margin-top:14px' id='transitCard'><p class='card-title'>中转站路径" +
+      "<span class='muted small'>全球探测点实测 traceroute</span></p>" +
+      "<div id='transitBox'><div class='v'><span class='spin'></span> 正在从全球探测点发起路径追踪…</div></div></div>";
+
     /* —— DNSBL 12 源 —— */
     if (S.dnsblFull && S.dnsblFull.length) {
       var cleanN = S.dnsblFull.filter(function (r) { return !r.listed && !r.refused; }).length;
@@ -637,6 +863,10 @@
     runRegionLatency();
     applyMask();
 
+    /* —— 异步加载：家宽判定 / 中转站路径（不阻塞主渲染） —— */
+    loadIsp(risk.ip || ip);
+    loadTransit(risk.ip || ip);
+
     if (S.route && S.route.upstreams && S.route.upstreams.length) {
       var box = document.getElementById("routeBox");
       if (box) {
@@ -646,8 +876,7 @@
       }
     }
     if (S.dnsblFull && S.dnsblFull.length) {
-      var gridEl = document.getElementById("dbllGrid");
-      if (gridEl) {
+      var gridEl = document.getElementById("dbllGrid");      if (gridEl) {
         dnsblGrid(gridEl, S.dnsblFull, "全部");
         document.querySelectorAll("#dbllChips .chip").forEach(function (btn) {
           btn.addEventListener("click", function () {

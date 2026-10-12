@@ -20,6 +20,28 @@ export async function fetchJson(url, headers, timeout) {
   return JSON.parse(r.body);
 }
 
+/* POST JSON 并返回完整响应（需要读 Location 等响应头时用，如 Globalping 建测量）
+   返回 { status, headers, body }，不因非 2xx 抛错，由调用方判断。 */
+export async function postRaw(url, payload, headers, timeout) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: Object.assign({ "Content-Type": "application/json" }, headers || {}),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(timeout || 8000),
+    cf: { cacheTtl: 0 },
+  });
+  const hdrs = {};
+  r.headers.forEach((v, k) => { hdrs[k.toLowerCase()] = v; });
+  return { status: r.status, headers: hdrs, body: await r.text() };
+}
+
+/* POST JSON：用于 ip-api 批量接口等只接受 POST 的数据源 */
+export async function postJson(url, payload, headers, timeout) {
+  const r = await postRaw(url, payload, headers, timeout);
+  if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
+  return JSON.parse(r.body);
+}
+
 const V4_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
 export const isV4 = (ip) => V4_RE.test(String(ip || ""));
 export const isV6 = (ip) => String(ip || "").includes(":") && /^[0-9a-f:.]+$/i.test(String(ip));

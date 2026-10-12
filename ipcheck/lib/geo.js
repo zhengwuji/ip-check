@@ -143,7 +143,10 @@ const DATACENTER_ASN = new Set([
   9009, 16276, 24940, 51167, 396982, 14618, 16592, 200052, 35048, 49870,
   398101, 396356, 54113, 55286, 60781, 45899, 59318, 209605, 212238, 208276,
 ]);
-const DATACENTER_ORG = /amazon|aws|google|microsoft|azure|oracle|digitalocean|linode|vultr|choopa|hetzner|ovh|scaleway|contabo|m247|leaseweb|alibaba|tencent|huawei|ucloud|qiniu|bandwagon|hostwinds|kamatera|upcloud|akamai|fastly|cloudflare|datacamp|packethub|gcore|melbikomas|xhost|aeza|justhost|bluevps|hosting|host |vps|server|datacenter|data center|colo\b|networks inc|networks\b|communications|it7|zendata|psychz|quadranet|colocation/i;
+/* 机房/云特征词。注意：不要加入 communications / networks 这类通用词——
+   Comcast Cable Communications、Charter Communications 等接入型 ISP 名称里都有，
+   会把家宽误判成机房（同时影响 classifyRisk 与 isp.js 的家宽判定）。 */
+const DATACENTER_ORG = /amazon|aws|google|microsoft|azure|oracle|digitalocean|linode|vultr|choopa|hetzner|ovh|scaleway|contabo|m247|leaseweb|alibaba|tencent|huawei|ucloud|qiniu|bandwagon|hostwinds|kamatera|upcloud|akamai|fastly|cloudflare|datacamp|packethub|gcore|melbikomas|xhost|aeza|justhost|bluevps|hosting|\bhost\b|vps|datacenter|data center|colo\b|it7|zendata|psychz|quadranet|colocation/i;
 const RESIDENTIAL_HINT = /telecom|telekom|comcast|verizon|at&t|china (telecom|unicom|mobile)|chinanet|cnnet|cmcc|t-mobile|sprint|vodafone|orange|jio|airtel|pldt|virgin|charter|cox|spectrum|kddi|softbank|ntt docomo|hinet|电信|联通|移动|广电|长城宽带|鹏博士|家庭宽带/i;
 const EDUCATION_HINT = /university|edu\b|教育网|cernet|school|college/i;
 

@@ -12,6 +12,9 @@ ipcheck/data/
 # 依赖
 node_modules/
 
+# Wrangler 本地缓存（部署时自动生成）
+.wrangler/
+
 # 构建产物（Workers 版 public 由 scripts/prepare.js 生成）
 Workers 和 Pages/public/
 

@@ -51,6 +51,8 @@ const geo = require("./lib/geo");
 const dnsbl = require("./lib/dnsbl");
 const ripe = require("./lib/ripe");
 const { ipDeep, ipDeepFull } = require("./lib/ipdeep");
+const { ispCheck } = require("./lib/isp");
+const { transitStart, transitResult } = require("./lib/transit");
 const { cfRisk } = require("./lib/cfrisk");
 const { cardSvg } = require("./lib/card");
 
@@ -61,6 +63,11 @@ const PORT = parseInt(process.env.PORT || "80", 10);
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const DNS_ZONE = process.env.DNS_ZONE || "";
+
+/* 人机校验服务端密钥：默认使用 Google / Cloudflare 官方公开测试密钥（仅演示链路，始终通过）。
+   生产环境请通过环境变量配置自有密钥，测试密钥不具备任何防护能力。 */
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"; // Google 公开测试密钥
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || "1x0000000000000000000000000000000AA";        // Cloudflare 公开测试密钥
 
 /* ---------------- 访客 IP：仅在直接连接来自本机/内网（反代）时信任转发头 ---------------- */
 function getVisitorIp(req) {
@@ -88,6 +95,8 @@ const RATE_RULES = [
   { re: /^\/api\/ooni/, limit: 60, name: "ooni" },
   { re: /^\/api\/gp\/poll/, limit: 120, name: "gppoll" },
   { re: /^\/api\/gp/, limit: 20, name: "gp" },
+  { re: /^\/api\/(transit\/start|transit\/result)/, limit: 30, name: "transit" },
+  { re: /^\/api\/isp\//, limit: 40, name: "isp" },
 ];
 const rateBuckets = new Map();
 function rateLimit(ip, p) {
@@ -598,6 +607,35 @@ const server = http.createServer(async (req, res) => {
       statsHit();
       return sendJson(req, res, 200, await ipScore(decodeURIComponent(m[1])));
     }
+    // ISP 家宽判定（是否住宅宽带 IP）
+    if ((m = p.match(/^\/api\/isp\/(.+)$/))) {
+      statsHit();
+      const tip = decodeURIComponent(m[1]);
+      if (!isV4(tip) && !isV6(tip)) return sendJson(req, res, 400, { error: "无效的 IP 地址" });
+      const rd = await geo.geoLookup(tip).catch(() => null);
+      const dp = await ipDeep(tip).catch(() => null);
+      return sendJson(req, res, 200, await ispCheck(tip, rd, dp));
+    }
+    // 中转站路径探测：发起
+    if ((m = p.match(/^\/api\/transit\/start\/(.+)$/))) {
+      statsHit();
+      const tip = decodeURIComponent(m[1]);
+      if (!isV4(tip) && !isV6(tip)) return sendJson(req, res, 400, { error: "无效的 IP 地址" });
+      if (isPrivateTarget(tip) || isBogon(tip)) return sendJson(req, res, 400, { error: "private_target" });
+      const mn = u.searchParams.get("nodes") || "";
+      try {
+        return sendJson(req, res, 200, await transitStart(tip, mn));
+      } catch (e) {
+        return sendJson(req, res, 502, { error: String(e.message || e) });
+      }
+    }
+    // 中转站路径探测：取结果
+    if ((m = p.match(/^\/api\/transit\/result\/([A-Za-z0-9_-]{4,64})$/))) {
+      statsHit();
+      const r = await transitResult(m[1]).catch(() => ({ error: "failed" }));
+      if (r && r.error) return sendJson(req, res, 404, r);
+      return sendJson(req, res, 200, r);
+    }
     // 分流出口检测：批量补齐出口 IP 的归属地
     if (p === "/api/egress/geo" && req.method === "POST") {
       const body = await readBody(req, 4096);
@@ -626,7 +664,7 @@ const server = http.createServer(async (req, res) => {
       if (!d.available) d.note = "本地为 HTTP 部署，无 TLS 握手指纹；线上 Workers 版会返回 ClientHello 摘要字段";
       return sendJson(req, res, 200, d);
     }
-    // reCAPTCHA v3 评分（官方公开测试密钥，演示链路用）
+    // reCAPTCHA v3 评分（默认使用 Google 官方公开测试密钥，演示链路用；可用环境变量覆盖为自有密钥）
     if (p === "/api/recaptcha/verify" && req.method === "POST") {
       const body = await readBody(req, 16384);
       let token = "";
@@ -636,7 +674,7 @@ const server = http.createServer(async (req, res) => {
         const resp = await fetch("https://www.google.com/recaptcha/api/siteverify", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NetProbe/1.0" },
-          body: new URLSearchParams({ secret: "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe", response: token }).toString(),
+          body: new URLSearchParams({ secret: RECAPTCHA_SECRET, response: token }).toString(),
           signal: AbortSignal.timeout(10000),
         });
         const d = await resp.json();
@@ -706,7 +744,7 @@ const server = http.createServer(async (req, res) => {
         const resp = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NetProbe/1.0" },
-          body: new URLSearchParams({ secret: "1x0000000000000000000000000000000AA", response: token }).toString(),
+          body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }).toString(),
           signal: AbortSignal.timeout(10000),
         });
         const d = await resp.json();

@@ -1,13 +1,13 @@
 # NetProbe — Cloudflare Workers 版
 
 与 VPS 版（`../ipcheck`）同一套前端页面 + 同一套检测逻辑，改写为 Cloudflare Workers 运行时。
-**不绑定、不使用任何 KV / Durable Object / R2**——全部缓存走 Worker 实例内存。
+常规缓存走 Worker 实例内存（不绑定 KV / R2）；Torrent announce 记录与全站查询计数使用 Durable Object 保持跨隔离一致。
 
 ## 目录结构
 
 ```
 Workers 和 Pages/
-├── wrangler.jsonc        # Worker + 静态资源(Assets) 配置，零绑定
+├── wrangler.jsonc        # Worker + 静态资源(Assets) + Durable Object 配置
 ├── package.json          # type:module；scripts 见下
 ├── dev-server.mjs        # 本地测试架：直接加载 src/worker.js + 磁盘 mock ASSETS
 ├── scripts/prepare.js    # 从 ../ipcheck/public 复制页面并烘焙资源版本号
@@ -53,6 +53,8 @@ npm run deploy         # = prepare + wrangler deploy
 | 变量 | 作用 |
 |---|---|
 | `ADMIN_TOKEN` | 启用 `/api/admin/purge` 清缓存接口（不配则该接口停用） |
+| `RECAPTCHA_SECRET` | reCAPTCHA v3 服务端密钥（可选；不配则用 Google 公开测试密钥，无防护能力） |
+| `TURNSTILE_SECRET` | Turnstile 服务端密钥（可选；不配则用 Cloudflare 公开测试密钥，无防护能力） |
 | ~~KV 绑定~~ | **不需要**。当前版本刻意零存储；想持久化报告/趋势再自行加 `NP_KV` |
 
 ## 与 VPS 版的功能差异

@@ -16,9 +16,16 @@ import { ipDeepFull } from "./lib/ipdeep.js";
 import { cfRisk } from "./lib/cfrisk.js";
 import { cardSvg } from "./lib/card.js";
 import { ipScore } from "./lib/score.js";
+import { ispCheck } from "./lib/isp.js";
+import { transitStart, transitResult } from "./lib/transit.js";
 import { getStatusHistory } from "./lib/status.js";
 
 const START = Date.now();
+
+/* 人机校验服务端密钥：默认使用 Google / Cloudflare 官方公开测试密钥（仅演示链路，始终通过）。
+   生产环境请在 Workers 配置环境变量 RECAPTCHA_SECRET / TURNSTILE_SECRET 覆盖。 */
+const RECAPTCHA_SECRET_TEST = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"; // Google 公开测试密钥
+const TURNSTILE_SECRET_TEST = "1x0000000000000000000000000000000AA";        // Cloudflare 公开测试密钥
 
 /* ---------------- 访客 IP：Cloudflare 直接提供可信头 ---------------- */
 function getVisitorIp(request) {
@@ -37,6 +44,8 @@ const RATE_RULES = [
   { re: /^\/api\/(whois|geoip|iprisk|ping\/start|egress\/geo|tlsinfo|stats)/, limit: 40, name: "light" },
   { re: /^\/api\/(turnstile|recaptcha)\/verify$/, limit: 20, name: "verify" },
       { re: /^\/api\/ooni/, limit: 60, name: "ooni" },
+      { re: /^\/api\/(transit\/start|transit\/result)/, limit: 30, name: "transit" },
+      { re: /^\/api\/isp\//, limit: 40, name: "isp" },
       { re: /^\/api\/gp\/poll/, limit: 120, name: "gppoll" },
       { re: /^\/api\/gp/, limit: 20, name: "gp" },
 ];
@@ -453,6 +462,36 @@ export default {
         statsHit(env, ctx);
         return json(await ipScore(decodeURIComponent(m[1])));
       }
+      /* ISP 家宽判定：PeeringDB 自报类型 + ip-api 机房标志 + 命名习惯多信号加权 */
+      if ((m = p.match(/^\/api\/isp\/(.+)$/))) {
+        const tip = decodeURIComponent(m[1]);
+        if (!isV4(tip) && !isV6(tip)) return json({ error: "无效的 IP 地址" }, 400);
+        statsHit(env, ctx);
+        const riskData = await geo.geoLookup(tip).catch(() => null);
+        const deep = await ipDeepFull(tip).catch(() => ({}));
+        return json(await ispCheck(tip, riskData, deep));
+      }
+      /* 中转站路径：check-host.net traceroute（start / result 两段式） */
+      if ((m = p.match(/^\/api\/transit\/start\/(.+)$/))) {
+        const tip = decodeURIComponent(m[1]);
+        if (!isV4(tip) && !isV6(tip)) return json({ error: "无效的 IP 地址" }, 400);
+        if (isPrivateTarget(tip)) return json({ error: "private_target" }, 400);
+        statsHit(env, ctx);
+        try {
+          return json(await transitStart(tip, url.searchParams.get("nodes") || 6));
+        } catch (e) {
+          return json({ error: String((e && e.message) || e) }, 502);
+        }
+      }
+      if ((m = p.match(/^\/api\/transit\/result\/([A-Za-z0-9_-]{4,64})$/))) {
+        /* Workers 各 isolate 不共享内存，start 可能落在别的实例上，
+           故 result 请求可带上目标 IP 作为无状态回退依据。 */
+        const qip = url.searchParams.get("ip") || "";
+        const qsrc = url.searchParams.get("src") || "";
+        const r = await transitResult(m[1], { ip: (isV4(qip) || isV6(qip)) ? qip : null, src: qsrc });
+        if (r && r.error) return json(r, 404);
+        return json(r);
+      }
       /* 分流出口检测：批量补齐出口 IP 的归属地（页面前端已逐一探测目标站点） */
       if (p === "/api/egress/geo" && request.method === "POST") {
         const body = await readJsonBody(request, 4096);
@@ -481,7 +520,7 @@ export default {
         d.available = !!(d.tlsVersion && d.tlsCipher);
         return json(d);
       }
-      /* reCAPTCHA v3 评分（官方公开测试密钥，演示链路用） */
+      /* reCAPTCHA v3 评分（默认 Google 官方公开测试密钥，演示链路用；生产请配置 RECAPTCHA_SECRET 环境变量） */
       if (p === "/api/recaptcha/verify" && request.method === "POST") {
         const body = await readJsonBody(request);
         const token = String(body.token || "").slice(0, 8192);
@@ -491,7 +530,7 @@ export default {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
-              secret: "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+              secret: (env && env.RECAPTCHA_SECRET) || RECAPTCHA_SECRET_TEST,
               response: token,
             }).toString(),
             signal: AbortSignal.timeout(10000),
@@ -558,7 +597,7 @@ export default {
           const resp = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ secret: "1x0000000000000000000000000000000AA", response: token }).toString(),
+            body: new URLSearchParams({ secret: (env && env.TURNSTILE_SECRET) || TURNSTILE_SECRET_TEST, response: token }).toString(),
             signal: AbortSignal.timeout(10000),
           });
           const d = await resp.json();

@@ -11,7 +11,7 @@
 | 页面 | 功能 | 说明 |
 |---|---|---|
 | `/` | IP 查询首页 | 本机 IP 多源归属地 + 全站连通性点阵 + 35 站分流出口 + 查询统计条 |
-| `/ip/` | IP 风险评分 | 六档评分色带、ASN/路由图、DNSBL、子网趋势、分享报告（可遮 IP 尾段 / 设有效期 / 一键复制给 AI 诊断）、语音搜索 |
+| `/ip/` | IP 风险评分 | 六档评分色带、ASN/路由图、DNSBL、子网趋势、**ISP 家宽判定** 🆕、**中转站路径追踪** 🆕、分享报告（可遮 IP 尾段 / 设有效期 / 一键复制给 AI 诊断）、语音搜索 |
 | `/claude/` | Claude 检测 | IP 纯净度 + 中国用户特征六项加权评分（时区/语言/字体/区域/偏移/Emoji） |
 | `/gpt/` | ChatGPT 检测 | chatgpt.com / api.openai.com 可达性 + ASN 分类 |
 | `/link/` | 网络连通性 | 40+ 目标分组探测，**支持添加自定义目标**（保存在本机浏览器） |
@@ -79,6 +79,8 @@ PORT=18999 node server.js   # 自定义端口
 | `DNS_ZONE` | 自托管 DNS 泄露检测的域名（如 `d.example.com`，需把 NS 记录指向本机并开放 UDP 53；不配置则自动降级为公共第三方检测） |
 | `TG_BOT_TOKEN` / `TG_CHAT_ID` | 服务异常时发送 Telegram 通知（可选） |
 | `IPINFO_TOKEN` | ipinfo.io 数据源 token（可选，用于增强 GeoIP） |
+| `RECAPTCHA_SECRET` | reCAPTCHA v3 服务端密钥（可选；不配置则用 Google 公开测试密钥，**无防护能力**，仅演示链路） |
+| `TURNSTILE_SECRET` | Turnstile 服务端密钥（可选；不配置则用 Cloudflare 公开测试密钥，**无防护能力**，仅演示链路） |
 
 管理员 token 首次启动时自动生成于 `data/admin-token`（用于 `GET /api/admin/purge?token=...` 清缓存，勿泄露）。
 
@@ -104,12 +106,49 @@ npm run deploy      # = prepare.js 构建 + wrangler deploy
 
 - 检测默认在**浏览器本地**完成：指纹、IP 计算器、MAC 查询、画像检测、安全清单进度等完全不上传；
 - 服务端**不落库任何个人数据**：查询计数仅存匿名次数，分享报告可遮盖 IP 尾段并按 1/3/7 天自动过期；
-- 所有凭据走环境变量，代码中不含任何密钥；reCAPTCHA / Turnstile 使用官方公开测试密钥（仅演示链路）；
+- 所有私密凭据走**环境变量**（`TG_BOT_TOKEN`、`IPINFO_TOKEN`、`ADMIN_TOKEN`、`RECAPTCHA_SECRET`、`TURNSTILE_SECRET`），代码库中不含任何私有密钥；仓库内置的 reCAPTCHA / Turnstile 值是 Google 与 Cloudflare **官方文档公开的测试密钥**（恒通过，无防护作用），仅用于演示校验链路，生产环境应通过环境变量替换为自有密钥；
 - 第三方数据源（GeoIP、OONI、Globalping、公共 DoH 等）均为公开开放接口。
+
+### 仓库安全约定
+
+以下内容**不纳入版本控制**（见 `.gitignore`），提交前请确认：
+
+| 路径 | 内容 |
+|---|---|
+| `_deploy/` | 本地部署脚本（含 SSH 主机与凭据） |
+| `ipcheck/data/` | 运行时数据（`admin-token`、查询缓存、分享报告） |
+| `Workers 和 Pages/public/` | 构建产物（由 `scripts/prepare.js` 生成） |
+| `Workers 和 Pages/.wrangler/` | Wrangler 本地缓存 |
+| `.env` / `.dev.vars` / `*.pem` / `*.key` | 环境变量与私钥 |
+
+自建部署请勿把上述文件提交到公开仓库。
 
 ---
 
 ## 📝 更新内容
+
+### v1.2.0（2026-10-12）
+
+**IP 评分页新增两项深度分析**
+
+- **ISP 家宽判定**：多信号加权判定目标 IP 是否属于 ISP 家用宽带接入网段。综合 PeeringDB 自报网络类型（`Cable/DSL/ISP` 等）、ip-api 机房/移动标志、运营商名称启发式、反向 DNS 命名习惯与 ASN 归属，输出档位（ISP 家宽 / 宽带接入 / 移动网络 / 机房托管）与置信度，并逐条列出加权依据。生产实测：Comcast `73.158.0.1` → ISP 家宽（60%）；Hetzner `213.133.117.197` → 机房托管（92%）。
+- **中转站路径追踪**：通过 Globalping 全球探测点实测 traceroute，还原目标 IP 的完整转发路径。展示探测点跨洲分布、途经中转网络（ASN 聚合，区分机房与运营商）、中转站 IP 明细（含 RTT 与归属）、各探测点逐跳路径，以及 RIPE RIS 观测的 AS 级 BGP 上游链路。
+
+**新增数据源与模块**
+
+- 新增 `lib/ipapi.js`（ip-api 批量富化，单次最多 100 个 IP）、`lib/isp.js`（家宽判定）、`lib/transit.js`（中转路径聚合），Node 版与 Workers 版各一份，**零新增 npm 依赖**。
+- 中转路径主数据源为 Globalping API，check-host.net 作为备用降级（后者对 Cloudflare 出口返回 403）。
+- Workers 版新增限流规则：`/api/transit/*` 30 次/分、`/api/isp/*` 40 次/分。
+
+**修复与优化**
+
+- 修复 RIPEstat `bgplay` 路径解析：`initial_state` 的 `path` 位于顶层而非 `attrs` 下，此前 AS 级链路统计恒为空（Node/Workers 两版均已修正）。
+- 修复 `DATACENTER_ORG` 机房特征词过宽导致的误判：`communications` / `networks` 等通用词会把 Comcast Cable **Communications** 这类接入 ISP 判为机房并扣分；已收窄词表，并让家宽特征词优先于机房词，避免双向计权互相抵消。
+- 修复 Workers 版中转任务状态丢失：各 isolate 不共享内存，任务 Map 在 start 与 result 落在不同 isolate 时查不到。result 端点改为无状态——从 Globalping 测量结果自身回读目标 IP，并支持前端传 `?ip=` 回退。
+- 修复中转 ASN 聚合出现 `ASnull` 分组：无 ASN 归属的跳不再计入 ASN 统计。
+- 修复 Globalping 探测点分布集中问题：`locations` 由 `magic:"World"` 改为显式国家列表，探测点跨洲分布更均匀。
+- 人机校验密钥改为环境变量可覆盖（`RECAPTCHA_SECRET` / `TURNSTILE_SECRET`），默认值仍为官方公开测试密钥。
+- `.gitignore` 补充 `.wrangler/`（Wrangler 本地缓存）。
 
 ### v1.1.0（2026-10-12）
 

@@ -707,3 +707,91 @@ html[data-theme="dark"] .leaflet-container { background: #10141c; }
 .cl-item.cl-ignored { opacity: 0.55; }
 .cl-title { font-weight: 600; }
 .cl-desc { margin-top: 3px; }
+
+/* ================= ISP 家宽判定 ================= */
+.isp-verdict {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap; padding: 14px 16px;
+  border-radius: 12px; background: var(--bg-soft);
+}
+.isp-verdict-main { display: flex; align-items: center; gap: 12px; }
+.isp-answer { font-size: 1.35em; font-weight: 800; letter-spacing: 0.5px; }
+.isp-answer.is-home { color: var(--good, #22c55e); }
+.isp-answer.is-not { color: var(--text-muted); }
+.isp-grade { display: inline-flex; }
+.isp-conf { display: flex; align-items: center; gap: 10px; min-width: 210px; }
+.isp-conf-bar {
+  flex: 1; height: 7px; min-width: 90px; border-radius: 4px;
+  background: var(--border, rgba(128,128,128,0.25)); overflow: hidden;
+}
+.isp-conf-bar i { display: block; height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+.isp-sig-list { display: flex; flex-direction: column; gap: 6px; }
+.isp-sig {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 11px; border-radius: 8px; background: var(--bg-soft);
+  border-left: 3px solid transparent;
+}
+.isp-sig.sig-pos { border-left-color: var(--good, #22c55e); }
+.isp-sig.sig-neg { border-left-color: var(--bad, #e05252); }
+.isp-sig.sig-zero { border-left-color: var(--border, rgba(128,128,128,0.4)); }
+.isp-sig-w {
+  flex: 0 0 auto; min-width: 38px; text-align: center; font-weight: 700;
+  font-size: 0.85em; border-radius: 5px; padding: 1px 5px;
+  background: var(--bg, rgba(128,128,128,0.12));
+}
+.isp-sig.sig-pos .isp-sig-w { color: var(--good, #22c55e); }
+.isp-sig.sig-neg .isp-sig-w { color: var(--bad, #e05252); }
+.isp-sig-t { flex: 1; font-size: 0.9em; line-height: 1.5; }
+
+/* ================= 中转站路径 ================= */
+.tr-stats {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: baseline;
+  padding: 11px 14px; border-radius: 10px; background: var(--bg-soft);
+  font-size: 0.88em;
+}
+.tr-stats b { font-size: 1.2em; }
+
+.tr-asn-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.tr-asn {
+  padding: 10px 12px; border-radius: 10px; background: var(--bg-soft);
+  border-left: 3px solid var(--border, rgba(128,128,128,0.4));
+}
+.tr-asn.tr-asn-isp { border-left-color: var(--good, #22c55e); }
+.tr-asn.tr-asn-dc { border-left-color: var(--warn, #f59e0b); }
+.tr-asn-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tr-asn-name { font-size: 0.88em; margin: 4px 0 2px; word-break: break-word; }
+
+.tr-station-list { display: flex; flex-direction: column; gap: 5px; }
+.tr-station {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; border-radius: 8px; background: var(--bg-soft);
+}
+.tr-station-ip { flex: 0 0 auto; min-width: 130px; font-weight: 600; }
+.tr-station-org { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-station-meta { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+
+.tr-nodes { display: flex; flex-direction: column; gap: 12px; }
+.tr-node-block { padding: 11px 13px; border-radius: 10px; background: var(--bg-soft); }
+.tr-node { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; font-size: 0.9em; }
+.tr-node-flag { font-size: 1.1em; }
+.tr-node-name { font-weight: 600; }
+
+.tr-path { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.tr-hop {
+  font-family: var(--mono, ui-monospace, monospace); font-size: 0.8em;
+  padding: 2px 7px; border-radius: 6px;
+  background: var(--bg, rgba(128,128,128,0.12)); white-space: nowrap;
+}
+.tr-hop-private { opacity: 0.6; font-style: italic; }
+.tr-hop-target { background: var(--accent, #4c8dff); color: #fff; font-weight: 700; }
+.tr-arrow { color: var(--text-muted); font-style: normal; font-size: 0.8em; }
+
+@media (max-width: 640px) {
+  .isp-conf { min-width: 100%; }
+  .tr-station { flex-wrap: wrap; gap: 6px; }
+  .tr-station-ip { min-width: 100%; }
+}

@@ -122,8 +122,16 @@ export async function routeTopology(ip, asn) {
     const r = await fetchJson("https://stat.ripe.net/data/bgplay/data.json?resource=" + encodeURIComponent(key), null, 15000);
     const dd = r.data || {};
     const paths = [];
-    (dd.initial_state || []).forEach((st) => { if (st.attrs && Array.isArray(st.attrs.path)) paths.push(st.attrs.path); });
-    (dd.events || []).forEach((ev) => { if (ev.attrs && Array.isArray(ev.attrs.path)) paths.push(ev.attrs.path); });
+    /* bgplay 的 initial_state 项 path 在顶层，events 项的 path 在 attrs 下（实测），
+       两侧都做回退以兼容字段位置变化。 */
+    (dd.initial_state || []).forEach((st) => {
+      const p = st.path || (st.attrs && st.attrs.path);
+      if (Array.isArray(p)) paths.push(p);
+    });
+    (dd.events || []).forEach((ev) => {
+      const p = (ev.attrs && ev.attrs.path) || ev.path;
+      if (Array.isArray(p)) paths.push(p);
+    });
     if (!paths.length) { routeCache.set(key, null); return null; }
     const prefix = (dd.initial_state || [])[0] && dd.initial_state[0].target_prefix || "";
     const firstHop = new Map();

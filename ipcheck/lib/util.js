@@ -31,6 +31,32 @@ async function fetchJson(url, headers, timeout) {
   return JSON.parse(r.body);
 }
 
+/* POST JSON 并返回完整响应（需要读 Location 等响应头时用，如 Globalping 建测量）
+   返回 { status, headers, body }，不因非 2xx 抛错，由调用方判断。 */
+function postRaw(url, payload, headers, timeout) {
+  return new Promise((resolve, reject) => {
+    const mod = url.startsWith("https:") ? https : http;
+    const body = Buffer.from(JSON.stringify(payload));
+    const h = Object.assign({ "Content-Type": "application/json", "Content-Length": body.length }, headers || {});
+    const req = mod.request(url, { method: "POST", headers: h, timeout: timeout || 8000 }, (res) => {
+      let buf = "";
+      res.setEncoding("utf8");
+      res.on("data", (c) => (buf += c));
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: buf }));
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end(body);
+  });
+}
+
+/* POST JSON：用于 ip-api 批量接口等只接受 POST 的数据源 */
+async function postJson(url, payload, headers, timeout) {
+  const r = await postRaw(url, payload, headers, timeout);
+  if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
+  return JSON.parse(r.body);
+}
+
 const V4_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
 const isV4 = (ip) => V4_RE.test(String(ip || ""));
 
@@ -105,6 +131,6 @@ function shortHash(s) {
 }
 
 module.exports = {
-  fetchRaw, fetchJson, isV4, isV6, expandV6, normalizeIp, isBogon, xmlEsc,
+  fetchRaw, fetchJson, postJson, postRaw, isV4, isV6, expandV6, normalizeIp, isBogon, xmlEsc,
   rdapBootstrap, rdapGet, writeJsonAtomic, shortHash,
 };
